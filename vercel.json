@@ -1,9 +1,10 @@
 {
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "server.py",
       "use": "@vercel/python",
       "config": {
+        "maxDuration": 60,
         "maxLambdaSize": "15mb"
       }
     },
@@ -15,7 +16,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "dest": "/server.py"
     },
     {
       "src": "/(.*)",
