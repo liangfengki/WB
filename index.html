@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品场景替换 - 极简工作室</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #FAFAFA;
+            --bg-surface: #FFFFFF;
+            --bg-hover: #F4F4F5;
+            --text-main: #09090B;
+            --text-muted: #71717A;
+            --text-light: #A1A1AA;
+            --border-color: #E4E4E7;
+            --accent-color: #18181B;
+            --accent-hover: #27272A;
+            --success: #10B981;
+            --danger: #EF4444;
+            --info: #3B82F6;
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Utility classes */
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 48px;
+        }
+
+        .logo-text h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .api-key-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .api-key-badge:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+
+        .api-key-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .api-key-badge.configured .dot {
+            background: var(--success);
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-hover);
+            color: var(--text-muted);
+        }
+
+        .upload-zone {
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-surface);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--text-main);
+            background: var(--bg-hover);
+        }
+
+        .upload-zone .upload-icon {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .upload-zone h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-list {
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-list::-webkit-scrollbar { width: 4px; }
+        .file-list::-webkit-scrollbar-track { background: transparent; }
+        .file-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            background: var(--bg-surface);
+        }
+
+        .file-item:hover {
+            border-color: var(--text-main);
+        }
+
+        .file-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            background: var(--bg-hover);
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-info .name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-info .size {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-hover);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 32px 0;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--bg-hover);
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .toggle-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        .toggle.active {
+            background: var(--accent-color);
+        }
+
+        .toggle::after {
+            content: '';
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: var(--transition);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .toggle.active::after {
+            left: 23px;
+        }
+
+        .scene-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .scene-card {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-surface);
+        }
+
+        .scene-card:hover {
+            border-color: var(--text-main);
+        }
+
+        .scene-card.selected {
+            border-color: var(--text-main);
+            background: var(--text-main);
+            color: var(--bg-surface);
+        }
+
+        .scene-card .scene-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .scene-card .scene-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .scene-card.selected .scene-desc {
+            color: var(--text-light);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-hover);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            transition: var(--transition);
+            outline: none;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-textarea:focus, .form-input:focus {
+            border-color: var(--text-main);
+            background: var(--bg-surface);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-hover);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .number-input-group {
+            display: inline-flex;
+            align-items: center;
+            background: var(--bg-hover);
+            border-radius: 100px;
+            padding: 4px;
+        }
+
+        .number-input-group button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .number-input-group button:hover {
+            background: var(--text-main);
+            color: var(--bg-surface);
+        }
+
+        .number-input-group input {
+            width: 48px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-full { width: 100%; }
+
+        .btn-lg {
+            padding: 16px 32px;
+            font-size: 16px;
+        }
+
+        .progress-section {
+            margin-top: 24px;
+            background: var(--bg-hover);
+            padding: 24px;
+            border-radius: var(--radius-md);
+        }
+
+        .progress-bar-container {
+            background: var(--border-color);
+            border-radius: 100px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--text-main);
+            border-radius: 100px;
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .progress-info .current-file {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .log-container {
+            margin-top: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--bg-hover);
+        }
+        .log-entry:last-child { border-bottom: none; }
+
+        .log-entry .time {
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+
+        .status-processing { color: var(--info); }
+        .status-completed { color: var(--success); }
+        .status-failed { color: var(--danger); }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .result-card {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            background: var(--bg-surface);
+        }
+
+        .result-card:hover {
+            border-color: var(--text-main);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            background: var(--bg-hover);
+        }
+
+        .result-card .result-label {
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .result-card .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition);
+            backdrop-filter: blur(2px);
+        }
+
+        .result-card:hover .overlay { opacity: 1; }
+
+        .overlay-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .overlay-btns .btn-icon {
+            width: 40px; height: 40px;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        .overlay-btns .btn-icon:hover {
+            border-color: var(--text-main);
+        }
+        .overlay-btns .btn-icon.delete:hover {
+            background: var(--danger); color: white; border-color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 64px 24px;
+        }
+
+        .empty-state .empty-icon {
+            margin-bottom: 16px;
+            color: var(--border-color);
+            display: flex;
+            justify-content: center;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(9, 9, 11, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            transform: translateY(20px) scale(0.98);
+            transition: var(--transition);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .image-preview-modal {
+            max-width: 90vw;
+            max-height: 90vh;
+            padding: 16px;
+            background: transparent;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-preview-modal img {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            display: block;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            padding: 24px;
+            background: var(--bg-hover);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            background: var(--text-main);
+            color: var(--bg-surface);
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+        }
+
+        .toast-error { background: var(--danger); }
+        .toast-success { background: var(--success); }
+        .toast-info { background: var(--text-main); }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top-color: var(--text-main);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-text">
+                <h1>WB主图场景替换</h1>
+                <p>Wildberries 产品图批量背景替换工具</p>
+            </div>
+            <div class="api-key-badge" id="apiKeyBadge" onclick="showApiKeyModal()">
+                <span class="dot"></span>
+                <span id="apiKeyStatus">默认 API Key</span>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Column: Settings -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <div class="card-title">上传产品图片</div>
+                    <span class="badge" id="fileCountBadge">0 张</span>
+                </div>
+
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <h3>将图片拖拽至此，或点击上传</h3>
+                    <p>支持 PNG, JPG, WEBP 格式。支持多选。</p>
+                    <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp" webkitdirectory>
+                </div>
+
+                <div class="file-list" id="fileList"></div>
+
+                <div class="divider"></div>
+
+                <div class="card-header">
+                    <div class="card-title">场景配置</div>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <div class="toggle-title">AI 自动识别</div>
+                        <div class="toggle-desc">自动识别产品类型，智能匹配最佳使用场景</div>
+                    </div>
+                    <div class="toggle" id="autoRecognizeToggle" onclick="toggleAutoRecognize()"></div>
+                </div>
+
+                <div id="sceneSection">
+                    <div class="scene-grid" id="sceneGrid"></div>
+
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label class="form-label">自定义场景描述（可选）</label>
+                        <textarea class="form-textarea" id="customPrompt" placeholder="描述你想要的场景，例如：温馨现代家居客厅场景，自然窗光，木质桌面..."></textarea>
+                    </div>
+                </div>
+
+                <div id="autoRecognizeHint" style="display: none; padding: 24px; background: var(--bg-hover); border-radius: var(--radius-md); text-align: center;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; color: var(--text-main); display: inline-block;"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+                    <div style="font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">AI 自动识别已开启</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">系统将自动识别每张图片中的产品类型，并为其匹配 3 个最适合的场景进行生成。</div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+                    <label class="form-label" style="margin-bottom: 0;">每张产品生成数量</label>
+                    <div class="number-input-group">
+                        <button onclick="changeImageCount(-1)">−</button>
+                        <input type="number" id="imagesPerProduct" value="3" min="1" max="10" readonly>
+                        <button onclick="changeImageCount(1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Process & Results -->
+            <div class="card fade-in" style="display: flex; flex-direction: column;">
+                <div id="readyState">
+                    <div class="card-header">
+                        <div class="card-title">准备就绪</div>
+                    </div>
+                    <div class="empty-state" id="emptyReady" style="padding-top: 60px;">
+                        <div class="empty-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <p style="margin-bottom: 32px;">上传产品图片并选择场景后，<br>点击下方按钮开始批量处理。</p>
+                        <button class="btn btn-primary btn-full btn-lg" id="startBtn" onclick="startProcess()" disabled>
+                            开始批量处理
+                        </button>
+                    </div>
+                </div>
+
+                <div id="processingState" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="spinner"></div>
+                            处理中...
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span class="current-file" id="currentFile">准备中...</span>
+                            <span id="progressText">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="log-container" id="logContainer"></div>
+                </div>
+
+                <div id="completedState" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">处理完成</div>
+                    </div>
+                    
+                    <div class="stats-row" id="statsRow"></div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 32px;">
+                        <button class="btn btn-primary" style="flex: 2;" onclick="downloadResults()">
+                            打包下载全部结果
+                        </button>
+                        <button class="btn btn-secondary" style="flex: 1;" onclick="resetAll()">
+                            开始新批次
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultsHeader" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: auto; padding-top: 32px;">
+                    <div class="card-title" style="font-size: 14px; margin-bottom: 0;">生成结果</div>
+                    <span class="badge" id="resultCountBadge">0 张</span>
+                </div>
+
+                <div id="resultsArea">
+                    <div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);">
+                        <div class="empty-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </div>
+                        <p>处理完成后结果将显示在这里</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="apiKeyModal" onclick="closeApiKeyModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h3>API Key 配置</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">必须配置 API Key 才能使用。支持配置多个 API Key 以实现负载均衡和提升并发速度。</p>
+            <div id="apiKeyList" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto;">
+                <!-- Inputs injected here -->
+            </div>
+            <button class="btn btn-secondary btn-full" style="margin-top: 16px; border-style: dashed;" onclick="addApiKeyInput()">+ 添加 API Key</button>
+            <div style="display: flex; gap: 12px; margin-top: 32px;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeApiKeyModal()">取消</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="saveApiKey()">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="imagePreviewModal" onclick="closeImagePreview()">
+        <div class="modal image-preview-modal" onclick="event.stopPropagation()">
+            <div style="position: relative;">
+                <img id="previewImage" src="" alt="预览">
+                <button class="btn-icon" onclick="closeImagePreview()" style="position: absolute; top: -16px; right: -16px; background: var(--bg-surface); box-shadow: var(--shadow-md);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let state = {
+            apiKey: localStorage.getItem('yunwu_api_key') || '',
+            sessionId: null,
+            inputDir: null,
+            uploadedFiles: [],
+            selectedScene: null,
+            taskId: null,
+            pollTimer: null,
+            autoRecognize: false,
+        };
+
+        function init() {
+            loadScenes();
+            checkApiKey();
+            setupUpload();
+            
+            if (!state.apiKey) {
+                setTimeout(() => {
+                    showApiKeyModal();
+                    showToast('初次使用请先配置 API Key', 'info');
+                }, 500);
+            }
+
+            const cachedTaskId = localStorage.getItem('currentTaskId');
+            if (cachedTaskId) {
+                state.taskId = cachedTaskId;
+                state.inputDir = localStorage.getItem('currentInputDir');
+                document.getElementById('readyState').style.display = 'none';
+                document.getElementById('processingState').style.display = 'block';
+                startPolling();
+                showToast('已恢复之前的处理任务', 'info');
+            }
+        }
+
+        function toggleAutoRecognize() {
+            state.autoRecognize = !state.autoRecognize;
+            const toggle = document.getElementById('autoRecognizeToggle');
+            const sceneSection = document.getElementById('sceneSection');
+            const autoHint = document.getElementById('autoRecognizeHint');
+
+            if (state.autoRecognize) {
+                toggle.classList.add('active');
+                sceneSection.style.display = 'none';
+                autoHint.style.display = 'block';
+            } else {
+                toggle.classList.remove('active');
+                sceneSection.style.display = 'block';
+                autoHint.style.display = 'none';
+            }
+            updateStartButton();
+        }
+
+        function loadScenes() {
+            fetch('/api/scenes')
+                .then(r => r.json())
+                .then(data => {
+                    const grid = document.getElementById('sceneGrid');
+                    grid.innerHTML = '';
+                    Object.entries(data.scenes).forEach(([name, desc]) => {
+                        const card = document.createElement('div');
+                        card.className = 'scene-card fade-in';
+                        card.dataset.scene = name;
+                        card.innerHTML = `
+                            <div class="scene-name">${name}</div>
+                            <div class="scene-desc">${desc}</div>
+                        `;
+                        card.onclick = () => selectScene(name, card);
+                        grid.appendChild(card);
+                    });
+                });
+        }
+
+        function selectScene(name, el) {
+            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            state.selectedScene = name;
+            document.getElementById('customPrompt').value = '';
+            updateStartButton();
+        }
+
+        function checkApiKey() {
+            if (state.apiKey) {
+                document.getElementById('apiKeyBadge').classList.add('configured');
+                const keyCount = state.apiKey.split(',').filter(k => k.trim()).length;
+                document.getElementById('apiKeyStatus').textContent = `已配置 ${keyCount} 个 API Key`;
+            } else {
+                document.getElementById('apiKeyBadge').classList.remove('configured');
+                document.getElementById('apiKeyStatus').textContent = '未配置 (必填)';
+                document.getElementById('apiKeyStatus').style.color = 'var(--danger)';
+            }
+            updateStartButton();
+        }
+
+        function renderApiKeyInputs(keys) {
+            const container = document.getElementById('apiKeyList');
+            container.innerHTML = '';
+            if (keys.length === 0) {
+                addApiKeyInput('');
+                return;
+            }
+            keys.forEach(k => addApiKeyInput(k));
+        }
+
+        function addApiKeyInput(value = '') {
+            const container = document.getElementById('apiKeyList');
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.gap = '12px';
+            div.innerHTML = `
+                <input type="password" class="form-input key-input" style="flex: 1;" placeholder="sk-..." value="${value}">
+                <button class="btn-icon" onclick="this.parentElement.remove()" title="删除">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function showApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.add('active');
+            const currentKeys = state.apiKey ? state.apiKey.split(',').filter(k => k.trim()) : [];
+            renderApiKeyInputs(currentKeys);
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.remove('active');
+        }
+
+        function saveApiKey() {
+            const inputs = document.querySelectorAll('.key-input');
+            const keys = Array.from(inputs).map(input => input.value.trim()).filter(k => k);
+            
+            const keyString = keys.join(',');
+            state.apiKey = keyString;
+            if (keyString) {
+                localStorage.setItem('yunwu_api_key', keyString);
+            } else {
+                localStorage.removeItem('yunwu_api_key');
+            }
+            checkApiKey();
+            closeApiKeyModal();
+            showToast('API Key 已保存', 'success');
+        }
+
+        function setupUpload() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            input.addEventListener('change', e => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(fileList) {
+            const imageFiles = Array.from(fileList).filter(f =>
+                f.type.match(/image\/(png|jpeg|webp)/)
+            );
+
+            if (!imageFiles.length) {
+                showToast('未找到支持的图片文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            imageFiles.forEach(f => formData.append('files', f));
+            if (state.sessionId) {
+                formData.append('session_id', state.sessionId);
+            }
+
+            showToast(`正在上传 ${imageFiles.length} 张图片...`, 'info');
+
+            fetch('/api/upload-preview', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async r => {
+                if (!r.ok) {
+                    if (r.status === 413) {
+                        throw new Error('图片体积过大，Vercel 限制单次请求不能超过 4.5MB');
+                    }
+                    try {
+                        const json = await r.json();
+                        throw new Error(json.message || json.error || '请求失败');
+                    } catch (e) {
+                        if (e.message.includes('JSON')) {
+                            throw new Error(`服务器错误 (${r.status}): 请检查 Vercel 部署日志`);
+                        }
+                        throw new Error(`服务器错误 (${r.status}): ${e.message}`);
+                    }
+                }
+                return r.json();
+            })
+            .then(data => {
+                state.sessionId = data.session_id;
+                state.inputDir = data.input_dir;
+                state.uploadedFiles = data.files;
+                renderFileList(data.files);
+                document.getElementById('fileCountBadge').textContent = `${data.count} 张`;
+                updateStartButton();
+                showToast(`成功上传 ${data.count} 张图片`, 'success');
+            })
+            .catch(err => {
+                showToast('上传失败: ' + err.message, 'error');
+            });
+        }
+
+        function renderFileList(files) {
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            files.forEach(f => {
+                const item = document.createElement('div');
+                item.className = 'file-item fade-in';
+                item.innerHTML = `
+                    <img class="file-thumb" src="${f.path}" alt="${f.name}" loading="lazy" onclick="showImagePreview('${f.path}')">
+                    <div class="file-info" onclick="showImagePreview('${f.path}')" style="cursor: pointer;">
+                        <div class="name">${f.name}</div>
+                        <div class="size">${formatSize(f.size)}</div>
+                    </div>
+                    <button class="btn-icon" onclick="deleteUploadedFile('${f.name}')" title="删除">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function deleteUploadedFile(filename) {
+            if (!confirm(`确定要删除图片 "${filename}" 吗？`)) return;
+            
+            fetch(`/api/upload/${state.sessionId}/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    state.uploadedFiles = state.uploadedFiles.filter(f => f.name !== filename);
+                    renderFileList(state.uploadedFiles);
+                    document.getElementById('fileCountBadge').textContent = `${state.uploadedFiles.length} 张`;
+                    updateStartButton();
+                    showToast('已删除图片', 'success');
+                } else {
+                    showToast(data.error || '删除失败', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('删除请求失败: ' + err.message, 'error');
+            });
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function changeImageCount(delta) {
+            const input = document.getElementById('imagesPerProduct');
+            let val = parseInt(input.value) + delta;
+            val = Math.max(1, Math.min(10, val));
+            input.value = val;
+        }
+
+        function updateStartButton() {
+            const btn = document.getElementById('startBtn');
+            const hasFiles = state.uploadedFiles.length > 0;
+            const hasScene = state.selectedScene !== null;
+            const hasAutoRecognize = state.autoRecognize;
+            const hasApiKey = !!state.apiKey;
+            btn.disabled = !(hasFiles && (hasScene || hasAutoRecognize) && hasApiKey);
+            
+            if (!hasApiKey && (hasFiles && (hasScene || hasAutoRecognize))) {
+                btn.title = "请先配置 API Key";
+            } else {
+                btn.title = "";
+            }
+        }
+
+        function getPrompt() {
+            const custom = document.getElementById('customPrompt').value.trim();
+            if (custom) return custom;
+
+            if (state.selectedScene) {
+                const sceneCards = document.querySelectorAll('.scene-card');
+                for (const card of sceneCards) {
+                    if (card.dataset.scene === state.selectedScene) {
+                        return card.querySelector('.scene-desc').textContent;
+                    }
+                }
+            }
+            return '';
+        }
+
+        function startProcess() {
+            if (!state.apiKey) {
+                showToast('请先配置 API Key', 'error');
+                showApiKeyModal();
+                return;
+            }
+
+            const prompt = getPrompt();
+            if (!prompt && !state.autoRecognize) {
+                showToast('请选择场景或开启自动识别', 'error');
+                return;
+            }
+
+            if (!state.inputDir) {
+                showToast('请先上传产品图', 'error');
+                return;
+            }
+
+            const imagesPerProduct = parseInt(document.getElementById('imagesPerProduct').value);
+
+            document.getElementById('readyState').style.display = 'none';
+            document.getElementById('processingState').style.display = 'block';
+            document.getElementById('completedState').style.display = 'none';
+
+            fetch('/api/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input_dir: state.inputDir,
+                    prompt: prompt,
+                    images_per_product: imagesPerProduct,
+                    api_key: state.apiKey,
+                    auto_recognize: state.autoRecognize,
+                }),
+            })
+            .then(async r => {
+                if (!r.ok) {
+                    try {
+                        const json = await r.json();
+                        throw new Error(json.error || '请求失败');
+                    } catch (e) {
+                        throw new Error(`服务器错误 (${r.status})`);
+                    }
+                }
+                return r.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    showToast(data.error, 'error');
+                    document.getElementById('readyState').style.display = 'block';
+                    document.getElementById('processingState').style.display = 'none';
+                    return;
+                }
+                
+                state.taskId = data.task_id;
+                localStorage.setItem('currentTaskId', state.taskId);
+                localStorage.setItem('currentInputDir', state.inputDir || '');
+                
+                if (data.status === 'completed' || data.status === 'failed') {
+                    // Vercel synchronous response
+                    if (data.status === 'completed') {
+                        showCompleted(data);
+                    } else {
+                        showFailed(data);
+                    }
+                } else {
+                    // Local background thread response
+                    startPolling();
+                    showToast('处理任务已启动', 'success');
+                }
+            })
+            .catch(err => {
+                showToast('启动失败: ' + err.message, 'error');
+                document.getElementById('readyState').style.display = 'block';
+                document.getElementById('processingState').style.display = 'none';
+            });
+        }
+
+        function startPolling() {
+            if (state.pollTimer) clearInterval(state.pollTimer);
+            state.pollTimer = setInterval(pollTask, 1500);
+            pollTask();
+        }
+
+        function pollTask() {
+            if (!state.taskId) return;
+
+            fetch(`/api/task/${state.taskId}`)
+                .then(r => r.json())
+                .then(data => {
+                    updateProgress(data);
+
+                    if (data.status === 'completed') {
+                        clearInterval(state.pollTimer);
+                        showCompleted(data);
+                    } else if (data.status === 'failed') {
+                        clearInterval(state.pollTimer);
+                        showFailed(data);
+                    }
+                });
+        }
+
+        function updateProgress(data) {
+            const progress = data.progress || {};
+            const percent = progress.percent || 0;
+
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = percent + '%';
+            document.getElementById('currentFile').textContent =
+                progress.current_file ? `${progress.current_file} - ${progress.detail || ''}` : '准备中...';
+
+            const logContainer = document.getElementById('logContainer');
+            const logs = data.log || [];
+            logContainer.innerHTML = logs.map(l => `
+                <div class="log-entry">
+                    <span class="time">${l.time}</span>
+                    <span class="status-${l.status}">[${l.status === 'completed' ? '✓' : l.status === 'failed' ? '✗' : '●'}]</span>
+                    <span>${l.file} ${l.detail || ''}</span>
+                </div>
+            `).join('');
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            if (data.output_files && data.output_files.length > 0) {
+                renderResults(data.output_files);
+            }
+        }
+
+        function showCompleted(data) {
+            document.getElementById('processingState').style.display = 'none';
+            document.getElementById('completedState').style.display = 'block';
+
+            const result = data.result || {};
+            let statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--success);">${result.success || 0}</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--danger);">${result.failed || 0}</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.output_files ? data.output_files.length : 0}</div>
+                    <div class="stat-label">生成图片</div>
+                </div>
+            `;
+            document.getElementById('statsRow').innerHTML = statsHtml;
+
+            const recognition = data.recognition || {};
+            if (Object.keys(recognition).length > 0) {
+                let recHtml = '<div style="margin-top: 24px; padding: 24px; background: var(--bg-hover); border-radius: var(--radius-md);">';
+                recHtml += '<div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>AI 识别结果</div>';
+                Object.entries(recognition).forEach(([fname, rec]) => {
+                    recHtml += `<div style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">`;
+                    recHtml += `<div style="font-size: 14px; color: var(--text-main); font-weight: 500;">${fname}</div>`;
+                    recHtml += `<div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">`;
+                    recHtml += `<span style="color: var(--text-main); font-weight: 500;">${rec.product_type}</span> · ${rec.product_name}`;
+                    if (rec.suitable_scenes && rec.suitable_scenes.length > 0) {
+                        recHtml += `<div style="margin-top: 6px; color: var(--text-light);">匹配场景: ${rec.suitable_scenes.slice(0, 3).map(s => s.substring(0, 20) + '...').join(' | ')}</div>`;
+                    }
+                    recHtml += `</div></div>`;
+                });
+                recHtml += '</div>';
+                document.getElementById('statsRow').insertAdjacentHTML('afterend', recHtml);
+            }
+
+            renderResults(data.output_files || []);
+            showToast('处理完成！', 'success');
+        }
+
+        function showFailed(data) {
+            document.getElementById('processingState').style.display = 'none';
+            document.getElementById('completedState').style.display = 'block';
+
+            document.getElementById('statsRow').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--danger);">✗</div>
+                    <div class="stat-label">处理失败</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">生成图片</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">成功</div>
+                </div>
+            `;
+
+            showToast('处理失败: ' + (data.error || '未知错误'), 'error');
+        }
+
+        function renderResults(files) {
+            const area = document.getElementById('resultsArea');
+            const header = document.getElementById('resultsHeader');
+            
+            if (!files.length) {
+                header.style.display = 'none';
+                area.innerHTML = '<div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><p>暂无结果</p></div>';
+                return;
+            }
+
+            header.style.display = 'flex';
+            document.getElementById('resultCountBadge').textContent = `${files.length} 张`;
+
+            area.innerHTML = `<div class="results-grid">${files.map(f => `
+                <div class="result-card fade-in" id="result-${f.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="showImagePreview('/api/output/${state.taskId}/${f}')">
+                    <img src="/api/output/${state.taskId}/${f}" alt="${f}" loading="lazy">
+                    <div class="result-label">${f}</div>
+                    <div class="overlay">
+                        <div class="overlay-btns">
+                            <a class="btn-icon" href="/api/output/${state.taskId}/${f}" download="${f}" onclick="event.stopPropagation()" title="下载">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                            <button class="btn-icon delete" onclick="deleteResultFile('${f}', event)" title="删除">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        }
+
+        function deleteResultFile(filename, event) {
+            event.stopPropagation();
+            if (!confirm(`确定要删除生成结果 "${filename}" 吗？`)) return;
+            
+            fetch(`/api/output/${state.taskId}/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const cardId = `result-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    const el = document.getElementById(cardId);
+                    if (el) el.remove();
+                    
+                    const countBadge = document.getElementById('resultCountBadge');
+                    let currentCount = parseInt(countBadge.textContent);
+                    if (!isNaN(currentCount) && currentCount > 0) {
+                        countBadge.textContent = `${currentCount - 1} 张`;
+                    }
+                    
+                    showToast('已删除结果图片', 'success');
+                } else {
+                    showToast(data.error || '删除失败', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('删除请求失败: ' + err.message, 'error');
+            });
+        }
+
+        function downloadResults() {
+            if (!state.taskId) return;
+            window.location.href = `/api/download/${state.taskId}`;
+            showToast('正在打包下载...', 'info');
+        }
+
+        function resetAll() {
+            state.sessionId = null;
+            state.inputDir = null;
+            state.uploadedFiles = [];
+            state.selectedScene = null;
+            state.taskId = null;
+            state.autoRecognize = false;
+            localStorage.removeItem('currentTaskId');
+            localStorage.removeItem('currentInputDir');
+
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('fileCountBadge').textContent = '0 张';
+            document.getElementById('customPrompt').value = '';
+            document.getElementById('imagesPerProduct').value = '3';
+            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('selected'));
+
+            const toggle = document.getElementById('autoRecognizeToggle');
+            toggle.classList.remove('active');
+            document.getElementById('sceneSection').style.display = 'block';
+            document.getElementById('autoRecognizeHint').style.display = 'none';
+
+            document.getElementById('readyState').style.display = 'block';
+            document.getElementById('processingState').style.display = 'none';
+            document.getElementById('completedState').style.display = 'none';
+
+            document.getElementById('resultsHeader').style.display = 'none';
+            document.getElementById('resultsArea').innerHTML =
+                '<div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><p>处理完成后结果将显示在这里</p></div>';
+            document.getElementById('resultCountBadge').textContent = '0 张';
+
+            updateStartButton();
+        }
+
+        function showImagePreview(src) {
+            document.getElementById('previewImage').src = src;
+            document.getElementById('imagePreviewModal').classList.add('active');
+        }
+
+        function closeImagePreview() {
+            document.getElementById('imagePreviewModal').classList.remove('active');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = { 
+                success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>', 
+                error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>', 
+                info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>' 
+            };
+            toast.innerHTML = `<span style="display:flex;align-items:center;">${icons[type] || icons.info}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(100%)';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeApiKeyModal();
+                closeImagePreview();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

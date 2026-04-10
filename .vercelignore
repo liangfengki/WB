@@ -1,0 +1,14 @@
+node_modules
+build
+dist
+.git
+.trae
+.log
+.figma
+uploads
+output
+logs
+models
+.venv
+venv
+__pycache__
