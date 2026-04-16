@@ -19,4 +19,16 @@ ENV PORT=8000
 
 EXPOSE 8000
 
-CMD python3 -c "import server; print('import ok')" && gunicorn server:app --bind 0.0.0.0:${PORT:-8000} --timeout 600 --workers 1 --graceful-timeout 600 --keep-alive 5 --log-level debug --error-logfile - --access-logfile - --preload
+CMD python3 -u -c "
+import os, sys
+port = int(os.environ.get('PORT', '8000'))
+print(f'STARTING on port {port}', flush=True)
+try:
+    import server
+    print('IMPORT OK', flush=True)
+    server.app.run(host='0.0.0.0', port=port, debug=False)
+except Exception as e:
+    print(f'STARTUP ERROR: {e}', flush=True)
+    import traceback; traceback.print_exc()
+    sys.exit(1)
+"
