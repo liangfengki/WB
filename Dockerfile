@@ -13,11 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN mkdir -p /app/uploads /app/output /app/logs /app/data
-RUN chmod +x /app/start.sh
 
 ENV PYTHONPATH=/app
-ENV PORT=8000
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["gunicorn", "server:app", "--bind", "0.0.0.0:8080", "--timeout", "600", "--workers", "1", "--threads", "4", "--graceful-timeout", "600", "--keep-alive", "5", "--log-level", "info", "--error-logfile", "-", "--access-logfile", "-"]
+CMD sh -c 'gunicorn server:app --bind 0.0.0.0:${PORT:-8080} --timeout 600 --workers 1 --threads 4 --graceful-timeout 600 --keep-alive 5 --log-level info --error-logfile - --access-logfile -'
