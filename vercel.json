@@ -11,12 +11,20 @@
     {
       "src": "index.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "admin.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/server.py"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
     },
     {
       "src": "/(.*)",

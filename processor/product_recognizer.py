@@ -114,7 +114,7 @@ SCENE_FALLBACK = [
 
 
 class ProductRecognizer:
-    def __init__(self, api_keys: list = None):
+    def __init__(self, api_keys: list = None, base_url: str = None, model: str = None):
         self.api_keys = api_keys if api_keys is not None else settings.YUNWU_API_KEYS
         if isinstance(self.api_keys, str):
             self.api_keys = [k.strip() for k in self.api_keys.split(",") if k.strip()]
@@ -122,8 +122,9 @@ class ProductRecognizer:
             raise ValueError("未提供任何 API Key")
             
         self.key_cycle = itertools.cycle(self.api_keys)
-        self.base_url = settings.YUNWU_BASE_URL
-        self.model = settings.YUNWU_MODEL
+        self.base_url = base_url if base_url else settings.YUNWU_BASE_URL
+        # 识别场景下通常使用大语言模型（如 gemini-1.5-pro 等），而非生图模型
+        self.model = model if model else settings.YUNWU_MODEL
 
     async def recognize_product(self, image: Image.Image) -> dict:
         current_key = next(self.key_cycle)

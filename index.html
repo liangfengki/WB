@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>产品场景替换 - 极简工作室</title>
+    <title>Varia - AI Background Replacement</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -22,14 +25,12 @@
             --radius-sm: 8px;
             --radius-md: 16px;
             --radius-lg: 24px;
-            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
-            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
-            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.08);
-            --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            --shadow-sm: 0 4px 12px rgba(0,0,0,.03);
+            --shadow-md: 0 8px 24px rgba(0,0,0,.05);
+            --shadow-lg: 0 20px 40px rgba(0,0,0,.08);
+            --transition: all .3s cubic-bezier(.16,1,.3,1);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-body);
@@ -38,1571 +39,1997 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
+            padding-bottom: 120px;
         }
 
-        /* Utility classes */
-        .fade-in { animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .app-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 48px 24px;
-        }
-
+        /* 头部 */
         .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 48px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 1020;
         }
+        .app-header .container { max-width: 1280px; }
+        .logo-text h1 { font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
+        .logo-text p { font-size: 13px; color: var(--text-muted); margin: 0; }
 
-        .logo-text h1 {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: var(--text-main);
-        }
-
-        .logo-text p {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .api-key-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        /* 授权码徽章 */
+        .license-badge {
+            display: inline-flex; align-items: center; gap: 8px;
             padding: 8px 16px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 100px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: var(--shadow-sm);
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: 100px; font-size: 13px; font-weight: 600;
+            color: var(--text-muted); cursor: pointer;
+            transition: var(--transition); box-shadow: var(--shadow-sm);
         }
+        .license-badge:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .license-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+        .license-badge.active .dot { background: var(--success); }
+        .license-badge.active { color: var(--success); border-color: var(--success); }
 
-        .api-key-badge:hover {
-            border-color: var(--text-main);
-            color: var(--text-main);
-        }
-
-        .api-key-badge .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--danger);
-        }
-
-        .api-key-badge.configured .dot {
-            background: var(--success);
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-        }
-
-        @media (max-width: 900px) {
-            .main-layout { grid-template-columns: 1fr; }
-        }
-
-        .card {
+        /* 卡片 */
+        .app-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 32px;
+            padding: 28px;
             box-shadow: var(--shadow-sm);
+            transition: var(--transition);
         }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-
+        .app-card:hover { box-shadow: var(--shadow-md); }
         .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 16px; font-weight: 600; letter-spacing: -.01em;
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 20px;
+        }
+        .card-title .badge-count {
+            padding: 2px 10px; border-radius: 100px; font-size: 12px;
+            font-weight: 600; background: var(--bg-hover); color: var(--text-muted);
         }
 
-        .badge {
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 600;
-            background: var(--bg-hover);
-            color: var(--text-muted);
-        }
-
+        /* 上传区域 */
         .upload-zone {
-            border: 1px dashed var(--border-color);
+            border: 2px dashed var(--border-color);
             border-radius: var(--radius-md);
-            padding: 48px 24px;
-            text-align: center;
-            cursor: pointer;
+            padding: 40px 20px;
+            text-align: center; cursor: pointer;
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
             background: var(--bg-surface);
         }
-
         .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--text-main);
-            background: var(--bg-hover);
+            border-color: var(--accent-color); background: var(--bg-hover);
         }
-
-        .upload-zone .upload-icon {
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .upload-zone h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .upload-zone p {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
+        .upload-zone .upload-icon { color: var(--text-muted); margin-bottom: 12px; font-size: 32px; }
+        .upload-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone p { font-size: 13px; color: var(--text-muted); margin: 0; }
         .upload-zone input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0;
-            cursor: pointer;
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
         }
 
-        .file-list {
-            margin-top: 16px;
-            max-height: 300px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
+        /* 文件列表 */
+        .file-list { margin-top: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
         .file-list::-webkit-scrollbar { width: 4px; }
-        .file-list::-webkit-scrollbar-track { background: transparent; }
         .file-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-
         .file-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 12px;
-            border-radius: var(--radius-md);
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px; border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
-            transition: var(--transition);
-            background: var(--bg-surface);
+            transition: var(--transition); background: var(--bg-surface);
+            position: relative;
         }
-
-        .file-item:hover {
-            border-color: var(--text-main);
-        }
-
-        .file-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-sm);
-            object-fit: cover;
-            background: var(--bg-hover);
-        }
-
-        .file-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .file-info .name {
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-info .size {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
+        .file-item:hover { border-color: var(--accent-color); }
+        .file-item:hover .btn-icon { opacity: 1; visibility: visible; }
+        .file-thumb { width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; background: var(--bg-hover); flex-shrink: 0; }
+        .file-info { flex: 1; min-width: 0; }
+        .file-info .name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-info .size { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
         .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: none;
-            background: var(--bg-hover);
-            color: var(--text-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
+            width: 30px; height: 30px; border-radius: 50%; border: none;
+            background: var(--bg-hover); color: var(--text-muted);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); font-size: 12px;
+            opacity: 0; visibility: hidden; flex-shrink: 0;
         }
+        .btn-icon:hover { background: var(--danger); color: #fff; }
 
-        .btn-icon:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--border-color);
-            margin: 32px 0;
-        }
-
+        /* 开关 */
         .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            background: var(--bg-hover);
-            border-radius: var(--radius-md);
-            margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; background: var(--bg-hover);
+            border-radius: var(--radius-md); margin-bottom: 16px;
         }
-
-        .toggle-info {
-            flex: 1;
-        }
-
-        .toggle-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .toggle-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
+        .toggle-info { flex: 1; }
+        .toggle-title { font-size: 14px; font-weight: 600; }
+        .toggle-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
         .toggle {
-            width: 44px;
-            height: 24px;
-            background: var(--border-color);
-            border-radius: 100px;
-            position: relative;
-            cursor: pointer;
-            transition: var(--transition);
-            flex-shrink: 0;
-            margin-left: 16px;
+            position: relative; width: 44px; height: 24px;
+            background: var(--border-color); border-radius: 100px;
+            cursor: pointer; transition: var(--transition);
+            flex-shrink: 0; margin-left: 12px;
         }
-
-        .toggle.active {
-            background: var(--accent-color);
-        }
-
+        .toggle.active { background: var(--success); }
         .toggle::after {
-            content: '';
-            width: 18px;
-            height: 18px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 3px;
-            left: 3px;
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2);
             transition: var(--transition);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        .toggle.active::after { left: 22px; }
 
-        .toggle.active::after {
-            left: 23px;
-        }
-
-        .scene-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .scene-card {
-            padding: 16px;
-            border-radius: var(--radius-md);
+        /* 场景选择 */
+        .scene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+        .scene-chip {
+            padding: 8px 14px; border-radius: 100px;
             border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: var(--transition);
-            background: var(--bg-surface);
+            font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: var(--transition);
+            text-align: center; background: var(--bg-surface);
         }
+        .scene-chip:hover { border-color: var(--accent-color); }
+        .scene-chip.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
 
-        .scene-card:hover {
-            border-color: var(--text-main);
+        /* 按钮 */
+        .btn-primary-app {
+            background: var(--accent-color); color: #fff; border: none;
+            border-radius: 12px; padding: 14px 28px;
+            font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-
-        .scene-card.selected {
-            border-color: var(--text-main);
-            background: var(--text-main);
-            color: var(--bg-surface);
+        .btn-primary-app:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary-app:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .btn-outline-app {
+            background: transparent; color: var(--accent-color);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 10px 20px; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: var(--transition);
         }
+        .btn-outline-app:hover { border-color: var(--accent-color); }
 
-        .scene-card .scene-name {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
+        /* API 状态按钮（顶部导航） */
+        .api-status-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: 100px; font-size: 13px; font-weight: 500;
+            color: var(--text-muted); cursor: pointer;
+            transition: var(--transition); box-shadow: var(--shadow-sm);
         }
+        .api-status-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .api-status-btn .api-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+        .api-status-btn.connected { color: var(--success); border-color: #86EFAC; background: #F0FDF4; }
+        .api-status-btn.connected .api-dot { background: var(--success); }
 
-        .scene-card .scene-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .scene-card.selected .scene-desc {
-            color: var(--text-light);
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 8px;
-        }
-
-        .form-textarea {
-            width: 100%;
-            padding: 16px;
-            background: var(--bg-hover);
-            border: 1px solid transparent;
-            border-radius: var(--radius-md);
-            color: var(--text-main);
-            font-size: 14px;
-            font-family: inherit;
-            transition: var(--transition);
-            outline: none;
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-textarea:focus, .form-input:focus {
-            border-color: var(--text-main);
-            background: var(--bg-surface);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-hover);
-            border: 1px solid transparent;
-            border-radius: var(--radius-sm);
-            color: var(--text-main);
-            font-size: 14px;
-            font-family: inherit;
-            transition: var(--transition);
-            outline: none;
-        }
-
-        .number-input-group {
-            display: inline-flex;
-            align-items: center;
-            background: var(--bg-hover);
-            border-radius: 100px;
-            padding: 4px;
-        }
-
-        .number-input-group button {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 50%;
-            background: var(--bg-surface);
-            color: var(--text-main);
-            font-size: 16px;
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .number-input-group button:hover {
-            background: var(--text-main);
-            color: var(--bg-surface);
-        }
-
-        .number-input-group input {
-            width: 48px;
-            text-align: center;
-            border: none;
-            background: transparent;
-            color: var(--text-main);
-            font-size: 15px;
-            font-weight: 600;
-            outline: none;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 14px 28px;
-            border: none;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-secondary {
-            background: var(--bg-surface);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-hover);
-            border-color: var(--text-muted);
-        }
-
-        .btn-full { width: 100%; }
-
-        .btn-lg {
-            padding: 16px 32px;
-            font-size: 16px;
-        }
-
-        .progress-section {
-            margin-top: 24px;
-            background: var(--bg-hover);
-            padding: 24px;
-            border-radius: var(--radius-md);
-        }
-
-        .progress-bar-container {
-            background: var(--border-color);
-            border-radius: 100px;
-            height: 6px;
-            overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--text-main);
-            border-radius: 100px;
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .progress-info .current-file {
-            color: var(--text-main);
-            font-weight: 500;
-        }
-
-        .log-container {
-            margin-top: 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 16px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        .log-entry {
-            display: flex;
-            gap: 12px;
-            padding: 4px 0;
-            border-bottom: 1px solid var(--bg-hover);
-        }
-        .log-entry:last-child { border-bottom: none; }
-
-        .log-entry .time {
-            color: var(--text-light);
-            flex-shrink: 0;
-        }
-
-        .status-processing { color: var(--info); }
-        .status-completed { color: var(--success); }
-        .status-failed { color: var(--danger); }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
-        }
-
-        .result-card {
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-            cursor: pointer;
-            position: relative;
-            background: var(--bg-surface);
-        }
-
-        .result-card:hover {
-            border-color: var(--text-main);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .result-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            display: block;
-            background: var(--bg-hover);
-        }
-
-        .result-card .result-label {
-            padding: 12px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .result-card .overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: var(--transition);
-            backdrop-filter: blur(2px);
-        }
-
-        .result-card:hover .overlay { opacity: 1; }
-
-        .overlay-btns {
-            display: flex;
-            gap: 8px;
-        }
-
-        .overlay-btns .btn-icon {
-            width: 40px; height: 40px;
-            background: var(--bg-surface);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-        }
-        .overlay-btns .btn-icon:hover {
-            border-color: var(--text-main);
-        }
-        .overlay-btns .btn-icon.delete:hover {
-            background: var(--danger); color: white; border-color: var(--danger);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 64px 24px;
-        }
-
-        .empty-state .empty-icon {
-            margin-bottom: 16px;
-            color: var(--border-color);
-            display: flex;
-            justify-content: center;
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(9, 9, 11, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--transition);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background: var(--bg-surface);
-            border-radius: var(--radius-lg);
-            padding: 40px;
-            max-width: 480px;
-            width: 90%;
-            transform: translateY(20px) scale(0.98);
-            transition: var(--transition);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .modal-overlay.active .modal {
-            transform: translateY(0) scale(1);
-        }
-
-        .modal h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .image-preview-modal {
-            max-width: 90vw;
+        /* API 配置弹窗 */
+        .api-config-modal .modal-content {
+            border-radius: 20px; border: none; box-shadow: var(--shadow-lg);
             max-height: 90vh;
-            padding: 16px;
-            background: transparent;
-            box-shadow: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
+        .api-config-modal .modal-body { padding: 20px 24px; overflow-y: auto; max-height: 65vh; }
 
-        .image-preview-modal img {
-            max-width: 100%;
-            max-height: 85vh;
-            border-radius: var(--radius-md);
+        /* 中转站卡片网格 */
+        .proxy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        @media (max-width: 575.98px) { .proxy-grid { grid-template-columns: repeat(2, 1fr); } }
+        .proxy-card {
+            border: 2px solid var(--border-color); border-radius: 14px;
+            padding: 14px 16px; cursor: pointer; transition: all .2s;
+            background: var(--bg-surface);
+        }
+        .proxy-card:hover { border-color: #A1A1AA; background: var(--bg-hover); }
+        .proxy-card.selected { border-color: var(--accent-color); background: var(--bg-hover); box-shadow: 0 0 0 3px rgba(24,24,27,.08); }
+        .proxy-card .pc-name { font-size: 14px; font-weight: 600; color: var(--text-main); line-height: 1.3; }
+        .proxy-card .pc-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* 详情区域（选中后展开） */
+        .api-detail-area {
+            border-top: 1px solid var(--border-color); padding-top: 18px;
+            animation: slideDown .25s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .api-detail-area .detail-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+
+        /* API 协议选择按钮组 */
+        .protocol-group { display: flex; gap: 8px; }
+        .protocol-btn {
+            flex: 1; padding: 10px 16px; border-radius: 12px; border: 2px solid var(--border-color);
+            background: var(--bg-surface); font-size: 14px; font-weight: 600;
+            cursor: pointer; text-align: center; transition: all .2s; color: var(--text-main);
+        }
+        .protocol-btn:hover { border-color: #A1A1AA; }
+        .protocol-btn.active { border-color: var(--accent-color); background: var(--accent-color); color: #fff; }
+
+        /* 底部操作按钮 */
+        .api-action-row { display: flex; gap: 10px; margin-top: 8px; }
+        .api-action-row .btn-test {
+            flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);
+            background: var(--bg-surface); font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all .2s; color: var(--text-main);
+        }
+        .api-action-row .btn-test:hover { border-color: var(--text-muted); }
+        .api-action-row .btn-save {
+            flex: 2; padding: 12px; border-radius: 12px; border: none;
+            background: var(--text-main); color: #fff; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all .2s;
+        }
+        .api-action-row .btn-save:hover { background: var(--accent-hover); }
+        .api-action-row .btn-save:disabled { opacity: .45; cursor: not-allowed; }
+        .api-cancel-btn {
+            width: 100%; padding: 10px; border-radius: 12px; border: none;
+            background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 500;
+            cursor: pointer; margin-top: 6px; transition: all .2s;
+        }
+        .api-cancel-btn:hover { background: var(--bg-hover); }
+
+        .form-control-app {
+            border-radius: 12px; padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            font-size: 14px; transition: var(--transition);
+            width: 100%;
+        }
+        .form-control-app:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(24,24,27,.1); outline: none; }
+        .form-select-app {
+            border-radius: 12px; padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            font-size: 14px; transition: var(--transition);
+            width: 100%; background: #fff;
+            cursor: pointer;
+        }
+        .form-select-app:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(24,24,27,.1); outline: none; }
+
+        .custom-url-row { display: none; }
+        .custom-url-row.show { display: block; }
+
+        .check-api-btn {
+            border-radius: 10px; padding: 10px 18px;
+            font-size: 13px; font-weight: 600;
+            background: var(--accent-color); color: #fff; border: none;
+            cursor: pointer; transition: var(--transition);
+            white-space: nowrap;
+        }
+        .check-api-btn:hover { background: var(--accent-hover); }
+        .check-api-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* 进度条 */
+        .progress-app { height: 8px; border-radius: 100px; background: var(--bg-hover); overflow: hidden; }
+        .progress-app .bar { height: 100%; background: var(--accent-color); border-radius: 100px; transition: width .5s ease; }
+
+        /* 日志区域 */
+        .log-list { max-height: 300px; overflow-y: auto; font-size: 12px; font-family: 'SF Mono','Fira Code',monospace; }
+        .log-item { padding: 6px 0; border-bottom: 1px solid var(--bg-hover); display: flex; gap: 8px; align-items: flex-start; }
+        .log-time { color: var(--text-light); white-space: nowrap; flex-shrink: 0; }
+        .log-status { font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+        .log-status.completed { color: var(--success); }
+        .log-status.failed { color: var(--danger); }
+        .log-status.processing { color: var(--info); }
+
+        /* 结果网格 - 按源图分组 */
+        .result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+
+        /* 分组容器 */
+        .result-group { margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-surface); transition: var(--transition); }
+        .result-group:hover { box-shadow: var(--shadow-sm); }
+        .result-group-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; background: var(--bg-hover);
+            cursor: pointer; user-select: none;
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .result-group-header:hover { background: #EBEBEB; }
+        .result-group-header .group-thumb {
+            width: 36px; height: 36px; border-radius: var(--radius-sm);
+            object-fit: cover; border: 1px solid var(--border-color);
+        }
+        .result-group-header .group-info { flex: 1; min-width: 0; }
+        .result-group-header .group-source-name {
+            font-size: 13px; font-weight: 600; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .result-group-header .group-count {
+            font-size: 11px; color: var(--text-muted); font-weight: 500;
+        }
+        .result-group-header .group-toggle {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); flex-shrink: 0; color: var(--text-muted);
+            font-size: 11px;
+        }
+        .result-group.collapsed .group-toggle { transform: rotate(-90deg); }
+        .result-group.collapsed .result-group-body { display: none; }
+
+        /* 分组内的结果网格 */
+        .result-group-body { padding: 10px; }
+        .result-item {
+            border-radius: var(--radius-sm); overflow: hidden;
+            border: 1px solid var(--border-color); transition: var(--transition);
+            position: relative; background: var(--bg-hover);
+        }
+        .result-item:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); z-index: 1; }
+        .result-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+        .result-item .result-name {
+            padding: 6px 8px; font-size: 11px; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            background: var(--bg-surface);
+        }
+        .result-item .result-actions {
+            position: absolute; top: 4px; right: 4px; display: flex; gap: 4px;
+            opacity: 1; transition: opacity .2s;
+        }
+        .result-item .result-actions .btn-icon { opacity: 0.7; visibility: visible; }
+        .result-item:hover .result-actions .btn-icon { opacity: 1; }
+
+        /* 微信二维码 → 已集成至悬浮胶囊按钮 */
+
+        /* 授权码输入弹窗 */
+        .license-modal .modal-content {
+            border-radius: 20px; border: none;
             box-shadow: var(--shadow-lg);
-            display: block;
+        }
+        .license-modal .modal-body { padding: 32px; }
+        .license-input {
+            border-radius: 12px; padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            font-family: 'SF Mono','Fira Code',monospace;
+            font-size: 16px; letter-spacing: 1px; text-align: center;
+        }
+        .license-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(24,24,27,.1); }
+
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+        .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; }
+        .empty-state p { font-size: 14px; }
+
+        /* 语言切换 */
+        .lang-switch {
+            font-size: 12px; color: var(--text-muted); cursor: pointer;
+            padding: 4px 8px; border-radius: 6px; transition: var(--transition);
+        }
+        .lang-switch:hover { background: var(--bg-hover); color: var(--text-main); }
+        .lang-switch.active { color: var(--accent-color); font-weight: 600; }
+
+        /* 识别结果 */
+        .recognition-card {
+            background: linear-gradient(135deg, #EFF6FF, #F0FDF4);
+            border: 1px solid #BFDBFE; border-radius: var(--radius-md);
+            padding: 16px; margin-top: 12px;
+        }
+        .recognition-card .rec-type { font-size: 18px; font-weight: 700; }
+        .recognition-card .rec-name { font-size: 14px; color: var(--text-muted); }
+
+        /* 懒加载图片占位 */
+        .lazy-placeholder { background: var(--bg-hover); display: flex; align-items: center; justify-content: center; color: var(--text-light); }
+
+        /* 响应式微调 */
+        @media (max-width: 575.98px) {
+            .app-card { padding: 20px; border-radius: var(--radius-md); }
+            .result-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .scene-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
+        /* 加载动画 */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
+
+        /* 悬浮胶囊按钮 - 居中大号 ×1.5 */
+        .fab-capsule {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+            z-index: 1040;
+            display: flex; align-items: center; gap: 0;
+            background: rgba(255,255,255,.92); backdrop-filter: blur(24px) saturate(200%);
+            border: 1px solid rgba(0,0,0,.08);
+            border-radius: 100px; padding: 10px 12px 10px 22px;
+            box-shadow: 0 14px 48px rgba(0,0,0,.18), 0 6px 16px rgba(0,0,0,.1);
+            transition: var(--transition);
+        }
+        .fab-capsule:hover { box-shadow: 0 20px 56px rgba(0,0,0,.24), 0 8px 20px rgba(0,0,0,.12); }
+        .fab-count-badge {
+            background: var(--accent-color); color: #fff;
+            font-size: 18px; font-weight: 700; padding: 5px 16px;
+            border-radius: 100px; margin-right: 14px;
+        }
+        .fab-select-wrap {
+            position: relative; margin-right: 12px;
+        }
+        .fab-select-wrap select {
+            appearance: none; -webkit-appearance: none;
+            background: var(--bg-hover); border: none; border-radius: 14px;
+            padding: 15px 44px 15px 18px; font-size: 20px; font-weight: 600;
+            color: var(--text-main); cursor: pointer; outline: none;
+            min-width: 100px; transition: var(--transition);
+        }
+        .fab-select-wrap select:hover { background: #E4E4E7; }
+        .fab-select-wrap::after {
+            content: ''; position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%);
+            border-left: 7px solid transparent; border-right: 7px solid transparent;
+            border-top: 9px solid var(--text-muted); pointer-events: none;
+        }
+        .fab-capsule-btn {
+            background: var(--accent-color); color: #fff; border: none;
+            border-radius: 100px; padding: 20px 48px; min-width: 210px;
+            font-size: 22px; font-weight: 600; cursor: pointer;
+            transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            white-space: nowrap;
+        }
+        .fab-capsule-btn:hover:not(:disabled) {
+            background: var(--accent-hover); transform: scale(1.04);
+            box-shadow: 0 8px 28px rgba(24,24,27,.35);
+        }
+        .fab-capsule-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+        .fab-capsule-btn .spinner-sm { width: 22px; height: 22px; border-width: 3px; }
+
+        /* 悬浮胶囊内的微信二维码 */
+        .fab-wechat {
+            display: flex; align-items: center; gap: 12px;
+            margin-right: 14px; padding-right: 20px;
+            border-right: 1px solid var(--border-color);
+            cursor: pointer; transition: var(--transition);
+            position: relative;
+        }
+        .fab-wechat:hover .fab-qr-thumb { transform: scale(1.1); box-shadow: 0 6px 20px rgba(7,193,96,.3); }
+        .fab-qr-thumb {
+            width: 54px; height: 54px; border-radius: 12px;
+            object-fit: cover; border: 1px solid rgba(0,0,0,.06);
+            transition: var(--transition);
+        }
+        .fab-wechat-label {
+            display: flex; flex-direction: column; line-height: 1.2;
+        }
+        .fab-wechat-label strong { font-size: 17px; font-weight: 600; color: var(--text-main); }
+        .fab-wechat-label span { font-size: 14px; color: var(--text-muted); }
+
+        /* 二维码弹出大图 */
+        .fab-qr-popup {
+            position: absolute; bottom: calc(100% + 16px); left: 0;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 24px;
+            box-shadow: 0 24px 72px rgba(0,0,0,.22), 0 10px 28px rgba(0,0,0,.12);
+            display: none; flex-direction: column; align-items: center; gap: 14px;
+            z-index: 1050; min-width: 260px;
+            animation: qrPopupIn .25s cubic-bezier(.16,1,.3,1);
+        }
+        .fab-qr-popup.show { display: flex; }
+        .fab-qr-popup img {
+            width: 240px; height: 240px; border-radius: 16px;
+            object-fit: cover; border: 1px solid var(--border-color);
+        }
+        .fab-qr-popup .qr-popup-text {
+            font-size: 18px; font-weight: 600; color: var(--text-main);
+            text-align: center; line-height: 1.4;
+        }
+        .fab-qr-popup .qr-popup-text small { font-weight: 400; color: var(--text-muted); display: block; font-size: 14px; margin-top: 4px; }
+        .fab-qr-popup::after {
+            content: ''; position: absolute; bottom: -8px; left: 38px;
+            width: 16px; height: 16px; background: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            transform: rotate(45deg);
+        }
+        @keyframes qrPopupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .fab-progress-pill {
+            position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
+            z-index: 1040;
+            background: rgba(255,255,255,.92); backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 100px; padding: 12px 24px;
+            box-shadow: 0 10px 32px rgba(0,0,0,.14);
+            font-size: 18px; color: var(--info); font-weight: 600;
+            white-space: nowrap; max-width: 400px;
+            overflow: hidden; text-overflow: ellipsis;
+            display: none; align-items: center; gap: 10px;
+            animation: fabFadeIn .25s ease;
+        }
+        .fab-progress-pill.show { display: flex; }
+        @keyframes fabFadeIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        @media (max-width: 575.98px) {
+            .fab-capsule {
+                left: 10px; right: 10px; transform: none;
+                justify-content: center; padding: 8px 8px 8px 14px;
+                bottom: 14px;
+            }
+            .fab-capsule-btn { padding: 16px 32px; font-size: 18px; min-width: 160px; }
+            .fab-wechat-label { display: none; }
+            .fab-qr-thumb { width: 40px; height: 40px; }
+            .fab-select-wrap select { padding: 12px 36px 12px 14px; font-size: 17px; min-width: 80px; }
+            .fab-count-badge { font-size: 15px; padding: 4px 12px; }
+            .fab-progress-pill { left: 10px; right: 10px; transform: none; bottom: 100px; font-size: 15px; padding: 10px 20px; }
+            @keyframes fabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         }
 
-        .stat-card {
-            padding: 24px;
-            background: var(--bg-hover);
-            border-radius: var(--radius-md);
-            text-align: center;
+        /* 灯箱（大图预览） */
+        .lightbox-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,.88); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity .25s ease;
         }
-
-        .stat-card .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: var(--text-main);
+        .lightbox-overlay.show { display: flex; opacity: 1; }
+        .lightbox-overlay img {
+            max-width: 92vw; max-height: 88vh;
+            border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+            object-fit: contain; cursor: grab;
+            user-select: none; -webkit-user-drag: none;
         }
-
-        .stat-card .stat-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
+        .lightbox-close {
+            position: absolute; top: 20px; right: 24px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+            color: #fff; font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); z-index: 10;
         }
-
-        .toast-container {
-            position: fixed;
-            bottom: 32px;
-            right: 32px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .lightbox-close:hover { background: rgba(255,255,255,.25); transform: scale(1.1); }
+        .lightbox-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+            color: #fff; font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); z-index: 10;
         }
-
-        .toast {
-            padding: 16px 24px;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 500;
-            background: var(--text-main);
-            color: var(--bg-surface);
-            box-shadow: var(--shadow-lg);
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 280px;
+        .lightbox-nav:hover { background: rgba(255,255,255,.25); transform: translateY(-50%) scale(1.1); }
+        .lightbox-nav.prev { left: 20px; }
+        .lightbox-nav.next { right: 20px; }
+        .lightbox-counter {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,.5); border-radius: 100px; padding: 6px 16px;
+            color: rgba(255,255,255,.8); font-size: 13px; font-weight: 500;
+            backdrop-filter: blur(4px);
         }
-
-        .toast-error { background: var(--danger); }
-        .toast-success { background: var(--success); }
-        .toast-info { background: var(--text-main); }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(0,0,0,0.1);
-            border-top-color: var(--text-main);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .lightbox-filename {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,.5); border-radius: 100px; padding: 6px 16px;
+            color: rgba(255,255,255,.8); font-size: 12px; font-weight: 500;
+            max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <div class="logo-text">
-                <h1>WB主图场景替换</h1>
-                <p>Wildberries 产品图批量背景替换工具</p>
-            </div>
-            <div class="api-key-badge" id="apiKeyBadge" onclick="showApiKeyModal()">
-                <span class="dot"></span>
-                <span id="apiKeyStatus">默认 API Key</span>
-            </div>
-        </header>
 
-        <div class="main-layout">
-            <!-- Left Column: Settings -->
-            <div class="card fade-in">
-                <div class="card-header">
-                    <div class="card-title">上传产品图片</div>
-                    <span class="badge" id="fileCountBadge">0 张</span>
-                </div>
-
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <!-- 顶部导航 -->
+    <header class="app-header">
+        <div class="container d-flex align-items-center justify-content-between py-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="/static/logo.png" alt="Varia" style="height:38px;width:auto;object-fit:contain">
+                    <div class="logo-text">
+                        <h1>Varia</h1>
+                        <p data-i18n="subtitle">AI Background Replacement</p>
                     </div>
-                    <h3>将图片拖拽至此，或点击上传</h3>
-                    <p>支持 PNG, JPG, WEBP 格式。支持多选。</p>
-                    <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp" webkitdirectory>
                 </div>
-
-                <div class="file-list" id="fileList"></div>
-
-                <div class="divider"></div>
-
-                <div class="card-header">
-                    <div class="card-title">场景配置</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="lang-switch active" data-lang="zh" onclick="setLang('zh')">中</span>
+                <span class="lang-switch" data-lang="en" onclick="setLang('en')">EN</span>
+                <span class="lang-switch" data-lang="ru" onclick="setLang('ru')">RU</span>
+                <div id="apiStatusBtn" class="api-status-btn ms-1" onclick="showApiModal()">
+                    <span class="api-dot"></span>
+                    <span id="apiStatusTextNav">API 未配置</span>
+                    <i class="bi bi-gear" style="font-size:11px;margin-left:2px;opacity:.5"></i>
                 </div>
+                <div id="licenseBadge" class="license-badge ms-2" onclick="showLicenseModal()">
+                    <span class="dot"></span>
+                    <span data-i18n="license_not_set">未设置授权码</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <div class="toggle-title">AI 自动识别</div>
-                        <div class="toggle-desc">自动识别产品类型，智能匹配最佳使用场景</div>
+    <!-- 主体内容 -->
+    <main class="container" style="max-width:1280px">
+        <div class="row g-3 g-lg-4 py-4">
+            <!-- 左列：上传 + 设置 -->
+            <div class="col-12 col-lg-6">
+                <!-- 上传区域 -->
+                <div class="app-card mb-3">
+                    <div class="card-title">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span data-i18n="upload_title">上传产品图</span>
+                        <span class="badge-count" id="fileCount">0</span>
                     </div>
-                    <div class="toggle" id="autoRecognizeToggle" onclick="toggleAutoRecognize()"></div>
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon"><i class="bi bi-image"></i></div>
+                        <h3 data-i18n="upload_hint">拖拽图片到此处或点击上传</h3>
+                        <p data-i18n="upload_formats">支持 JPG、PNG、WebP 格式</p>
+                        <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.webp">
+                    </div>
+                    <div class="file-list" id="fileList"></div>
                 </div>
 
-                <div id="sceneSection">
+                <!-- 场景设置 -->
+                <div class="app-card mb-3">
+                    <div class="card-title">
+                        <i class="bi bi-palette"></i>
+                        <span data-i18n="scene_title">场景设置</span>
+                    </div>
+                    <!-- 自动识别开关 -->
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <div class="toggle-title" data-i18n="auto_recognize">🤖 AI 自动识别产品</div>
+                            <div class="toggle-desc" data-i18n="auto_recognize_desc">自动识别产品类型并匹配最佳场景</div>
+                        </div>
+                        <div class="toggle" id="autoRecognizeToggle" onclick="toggleAutoRecognize()"></div>
+                    </div>
+                    <!-- 预设场景 -->
                     <div class="scene-grid" id="sceneGrid"></div>
-
-                    <div class="form-group" style="margin-top: 16px;">
-                        <label class="form-label">自定义场景描述（可选）</label>
-                        <textarea class="form-textarea" id="customPrompt" placeholder="描述你想要的场景，例如：温馨现代家居客厅场景，自然窗光，木质桌面..."></textarea>
+                    <!-- 自定义提示词 -->
+                    <div class="mt-3">
+                        <label class="form-label fw-medium" style="font-size:13px" data-i18n="custom_prompt">自定义场景描述</label>
+                        <textarea id="customPrompt" class="form-control" rows="3" style="border-radius:12px;font-size:14px" placeholder="描述你想要的背景风格..." data-i18n-placeholder="custom_prompt_placeholder"></textarea>
                     </div>
                 </div>
 
-                <div id="autoRecognizeHint" style="display: none; padding: 24px; background: var(--bg-hover); border-radius: var(--radius-md); text-align: center;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; color: var(--text-main); display: inline-block;"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-                    <div style="font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">AI 自动识别已开启</div>
-                    <div style="font-size: 13px; color: var(--text-muted);">系统将自动识别每张图片中的产品类型，并为其匹配 3 个最适合的场景进行生成。</div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
-                    <label class="form-label" style="margin-bottom: 0;">每张产品生成数量</label>
-                    <div class="number-input-group">
-                        <button onclick="changeImageCount(-1)">−</button>
-                        <input type="number" id="imagesPerProduct" value="3" min="1" max="10" readonly>
-                        <button onclick="changeImageCount(1)">+</button>
-                    </div>
-                </div>
+                <!-- 生成数量 + 开始处理 → 已移至底部悬浮栏 -->
             </div>
 
-            <!-- Right Column: Process & Results -->
-            <div class="card fade-in" style="display: flex; flex-direction: column;">
-                <div id="readyState">
-                    <div class="card-header">
-                        <div class="card-title">准备就绪</div>
+            <!-- 右列：进度 + 结果 -->
+            <div class="col-12 col-lg-6">
+                <!-- 处理进度 -->
+                <div class="app-card mb-3" id="progressCard" style="display:none">
+                    <div class="card-title">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span data-i18n="progress_title">处理进度</span>
                     </div>
-                    <div class="empty-state" id="emptyReady" style="padding-top: 60px;">
-                        <div class="empty-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <div class="progress-app mb-2">
+                        <div class="bar" id="progressBar" style="width:0%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted" style="font-size:13px" id="progressText">0%</span>
+                        <span class="text-muted" style="font-size:13px" id="progressDetail"></span>
+                    </div>
+                    <!-- 日志 -->
+                    <div class="log-list" id="logList"></div>
+                </div>
+
+                <!-- 识别结果 -->
+                <div id="recognitionCard" class="recognition-card mb-3" style="display:none">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-robot" style="font-size:18px"></i>
+                        <span class="rec-type" id="recType"></span>
+                    </div>
+                    <div class="rec-name" id="recName"></div>
+                </div>
+
+                <!-- 处理结果 -->
+                <div class="app-card">
+                    <div class="card-title d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-grid"></i>
+                            <span data-i18n="result_title">处理结果</span>
+                            <span class="badge-count" id="resultCount">0</span>
                         </div>
-                        <p style="margin-bottom: 32px;">上传产品图片并选择场景后，<br>点击下方按钮开始批量处理。</p>
-                        <button class="btn btn-primary btn-full btn-lg" id="startBtn" onclick="startProcess()" disabled>
-                            开始批量处理
-                        </button>
-                    </div>
-                </div>
-
-                <div id="processingState" style="display: none;">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="spinner"></div>
-                            处理中...
-                        </div>
-                    </div>
-                    
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
-                        </div>
-                        <div class="progress-info">
-                            <span class="current-file" id="currentFile">准备中...</span>
-                            <span id="progressText">0%</span>
-                        </div>
-                    </div>
-
-                    <div class="log-container" id="logContainer"></div>
-                </div>
-
-                <div id="completedState" style="display: none;">
-                    <div class="card-header">
-                        <div class="card-title">处理完成</div>
-                    </div>
-                    
-                    <div class="stats-row" id="statsRow"></div>
-
-                    <div style="display: flex; gap: 16px; margin-bottom: 32px;">
-                        <button class="btn btn-primary" style="flex: 2;" onclick="downloadResults()">
-                            打包下载全部结果
-                        </button>
-                        <button class="btn btn-secondary" style="flex: 1;" onclick="resetAll()">
-                            开始新批次
-                        </button>
-                    </div>
-                </div>
-
-                <div id="resultsHeader" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: auto; padding-top: 32px;">
-                    <div class="card-title" style="font-size: 14px; margin-bottom: 0;">生成结果</div>
-                    <span class="badge" id="resultCountBadge">0 张</span>
-                </div>
-
-                <div id="resultsArea">
-                    <div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);">
-                        <div class="empty-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        </div>
-                        <p>处理完成后结果将显示在这里</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div class="modal-overlay" id="apiKeyModal" onclick="closeApiKeyModal()">
-        <div class="modal" onclick="event.stopPropagation()">
-            <h3>API Key 配置</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">必须配置 API Key 才能使用。支持配置多个 API Key 以实现负载均衡和提升并发速度。</p>
-            <div id="apiKeyList" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto;">
-                <!-- Inputs injected here -->
-            </div>
-            <button class="btn btn-secondary btn-full" style="margin-top: 16px; border-style: dashed;" onclick="addApiKeyInput()">+ 添加 API Key</button>
-            <div style="display: flex; gap: 12px; margin-top: 32px;">
-                <button class="btn btn-secondary" style="flex: 1;" onclick="closeApiKeyModal()">取消</button>
-                <button class="btn btn-primary" style="flex: 1;" onclick="saveApiKey()">保存配置</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="imagePreviewModal" onclick="closeImagePreview()">
-        <div class="modal image-preview-modal" onclick="event.stopPropagation()">
-            <div style="position: relative;">
-                <img id="previewImage" src="" alt="预览">
-                <button class="btn-icon" onclick="closeImagePreview()" style="position: absolute; top: -16px; right: -16px; background: var(--bg-surface); box-shadow: var(--shadow-md);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="toast-container" id="toastContainer"></div>
-
-    <script>
-        let state = {
-            apiKey: localStorage.getItem('yunwu_api_key') || '',
-            sessionId: null,
-            inputDir: null,
-            uploadedFiles: [],
-            selectedScene: null,
-            taskId: null,
-            pollTimer: null,
-            autoRecognize: false,
-        };
-
-        function init() {
-            loadScenes();
-            checkApiKey();
-            setupUpload();
-            
-            if (!state.apiKey) {
-                setTimeout(() => {
-                    showApiKeyModal();
-                    showToast('初次使用请先配置 API Key', 'info');
-                }, 500);
-            }
-
-            const cachedTaskId = localStorage.getItem('currentTaskId');
-            if (cachedTaskId) {
-                state.taskId = cachedTaskId;
-                state.inputDir = localStorage.getItem('currentInputDir');
-                document.getElementById('readyState').style.display = 'none';
-                document.getElementById('processingState').style.display = 'block';
-                startPolling();
-                showToast('已恢复之前的处理任务', 'info');
-            }
-        }
-
-        function toggleAutoRecognize() {
-            state.autoRecognize = !state.autoRecognize;
-            const toggle = document.getElementById('autoRecognizeToggle');
-            const sceneSection = document.getElementById('sceneSection');
-            const autoHint = document.getElementById('autoRecognizeHint');
-
-            if (state.autoRecognize) {
-                toggle.classList.add('active');
-                sceneSection.style.display = 'none';
-                autoHint.style.display = 'block';
-            } else {
-                toggle.classList.remove('active');
-                sceneSection.style.display = 'block';
-                autoHint.style.display = 'none';
-            }
-            updateStartButton();
-        }
-
-        function loadScenes() {
-            fetch('/api/scenes')
-                .then(r => r.json())
-                .then(data => {
-                    const grid = document.getElementById('sceneGrid');
-                    grid.innerHTML = '';
-                    Object.entries(data.scenes).forEach(([name, desc]) => {
-                        const card = document.createElement('div');
-                        card.className = 'scene-card fade-in';
-                        card.dataset.scene = name;
-                        card.innerHTML = `
-                            <div class="scene-name">${name}</div>
-                            <div class="scene-desc">${desc}</div>
-                        `;
-                        card.onclick = () => selectScene(name, card);
-                        grid.appendChild(card);
-                    });
-                });
-        }
-
-        function selectScene(name, el) {
-            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
-            state.selectedScene = name;
-            document.getElementById('customPrompt').value = '';
-            updateStartButton();
-        }
-
-        function checkApiKey() {
-            if (state.apiKey) {
-                document.getElementById('apiKeyBadge').classList.add('configured');
-                const keyCount = state.apiKey.split(',').filter(k => k.trim()).length;
-                document.getElementById('apiKeyStatus').textContent = `已配置 ${keyCount} 个 API Key`;
-            } else {
-                document.getElementById('apiKeyBadge').classList.remove('configured');
-                document.getElementById('apiKeyStatus').textContent = '未配置 (必填)';
-                document.getElementById('apiKeyStatus').style.color = 'var(--danger)';
-            }
-            updateStartButton();
-        }
-
-        function renderApiKeyInputs(keys) {
-            const container = document.getElementById('apiKeyList');
-            container.innerHTML = '';
-            if (keys.length === 0) {
-                addApiKeyInput('');
-                return;
-            }
-            keys.forEach(k => addApiKeyInput(k));
-        }
-
-        function addApiKeyInput(value = '') {
-            const container = document.getElementById('apiKeyList');
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.gap = '12px';
-            div.innerHTML = `
-                <input type="password" class="form-input key-input" style="flex: 1;" placeholder="sk-..." value="${value}">
-                <button class="btn-icon" onclick="this.parentElement.remove()" title="删除">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            `;
-            container.appendChild(div);
-        }
-
-        function showApiKeyModal() {
-            document.getElementById('apiKeyModal').classList.add('active');
-            const currentKeys = state.apiKey ? state.apiKey.split(',').filter(k => k.trim()) : [];
-            renderApiKeyInputs(currentKeys);
-        }
-
-        function closeApiKeyModal() {
-            document.getElementById('apiKeyModal').classList.remove('active');
-        }
-
-        function saveApiKey() {
-            const inputs = document.querySelectorAll('.key-input');
-            const keys = Array.from(inputs).map(input => input.value.trim()).filter(k => k);
-            
-            const keyString = keys.join(',');
-            state.apiKey = keyString;
-            if (keyString) {
-                localStorage.setItem('yunwu_api_key', keyString);
-            } else {
-                localStorage.removeItem('yunwu_api_key');
-            }
-            checkApiKey();
-            closeApiKeyModal();
-            showToast('API Key 已保存', 'success');
-        }
-
-        function setupUpload() {
-            const zone = document.getElementById('uploadZone');
-            const input = document.getElementById('fileInput');
-
-            zone.addEventListener('dragover', e => {
-                e.preventDefault();
-                zone.classList.add('dragover');
-            });
-
-            zone.addEventListener('dragleave', () => {
-                zone.classList.remove('dragover');
-            });
-
-            zone.addEventListener('drop', e => {
-                e.preventDefault();
-                zone.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files);
-            });
-
-            input.addEventListener('change', e => {
-                handleFiles(e.target.files);
-            });
-        }
-
-        function handleFiles(fileList) {
-            const imageFiles = Array.from(fileList).filter(f =>
-                f.type.match(/image\/(png|jpeg|webp)/)
-            );
-
-            if (!imageFiles.length) {
-                showToast('未找到支持的图片文件', 'error');
-                return;
-            }
-
-            const formData = new FormData();
-            imageFiles.forEach(f => formData.append('files', f));
-            if (state.sessionId) {
-                formData.append('session_id', state.sessionId);
-            }
-
-            showToast(`正在上传 ${imageFiles.length} 张图片...`, 'info');
-
-            fetch('/api/upload-preview', {
-                method: 'POST',
-                body: formData,
-            })
-            .then(async r => {
-                if (!r.ok) {
-                    if (r.status === 413) {
-                        throw new Error('图片体积过大，Vercel 限制单次请求不能超过 4.5MB');
-                    }
-                    try {
-                        const json = await r.json();
-                        throw new Error(json.message || json.error || '请求失败');
-                    } catch (e) {
-                        if (e.message.includes('JSON')) {
-                            throw new Error(`服务器错误 (${r.status}): 请检查 Vercel 部署日志`);
-                        }
-                        throw new Error(`服务器错误 (${r.status}): ${e.message}`);
-                    }
-                }
-                return r.json();
-            })
-            .then(data => {
-                state.sessionId = data.session_id;
-                state.inputDir = data.input_dir;
-                state.uploadedFiles = data.files;
-                renderFileList(data.files);
-                document.getElementById('fileCountBadge').textContent = `${data.count} 张`;
-                updateStartButton();
-                showToast(`成功上传 ${data.count} 张图片`, 'success');
-            })
-            .catch(err => {
-                showToast('上传失败: ' + err.message, 'error');
-            });
-        }
-
-        function renderFileList(files) {
-            const list = document.getElementById('fileList');
-            list.innerHTML = '';
-            files.forEach(f => {
-                const item = document.createElement('div');
-                item.className = 'file-item fade-in';
-                item.innerHTML = `
-                    <img class="file-thumb" src="${f.path}" alt="${f.name}" loading="lazy" onclick="showImagePreview('${f.path}')">
-                    <div class="file-info" onclick="showImagePreview('${f.path}')" style="cursor: pointer;">
-                        <div class="name">${f.name}</div>
-                        <div class="size">${formatSize(f.size)}</div>
-                    </div>
-                    <button class="btn-icon" onclick="deleteUploadedFile('${f.name}')" title="删除">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function deleteUploadedFile(filename) {
-            if (!confirm(`确定要删除图片 "${filename}" 吗？`)) return;
-            
-            fetch(`/api/upload/${state.sessionId}/${encodeURIComponent(filename)}`, {
-                method: 'DELETE'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    state.uploadedFiles = state.uploadedFiles.filter(f => f.name !== filename);
-                    renderFileList(state.uploadedFiles);
-                    document.getElementById('fileCountBadge').textContent = `${state.uploadedFiles.length} 张`;
-                    updateStartButton();
-                    showToast('已删除图片', 'success');
-                } else {
-                    showToast(data.error || '删除失败', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('删除请求失败: ' + err.message, 'error');
-            });
-        }
-
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-        }
-
-        function changeImageCount(delta) {
-            const input = document.getElementById('imagesPerProduct');
-            let val = parseInt(input.value) + delta;
-            val = Math.max(1, Math.min(10, val));
-            input.value = val;
-        }
-
-        function updateStartButton() {
-            const btn = document.getElementById('startBtn');
-            const hasFiles = state.uploadedFiles.length > 0;
-            const hasScene = state.selectedScene !== null;
-            const hasAutoRecognize = state.autoRecognize;
-            const hasApiKey = !!state.apiKey;
-            btn.disabled = !(hasFiles && (hasScene || hasAutoRecognize) && hasApiKey);
-            
-            if (!hasApiKey && (hasFiles && (hasScene || hasAutoRecognize))) {
-                btn.title = "请先配置 API Key";
-            } else {
-                btn.title = "";
-            }
-        }
-
-        function getPrompt() {
-            const custom = document.getElementById('customPrompt').value.trim();
-            if (custom) return custom;
-
-            if (state.selectedScene) {
-                const sceneCards = document.querySelectorAll('.scene-card');
-                for (const card of sceneCards) {
-                    if (card.dataset.scene === state.selectedScene) {
-                        return card.querySelector('.scene-desc').textContent;
-                    }
-                }
-            }
-            return '';
-        }
-
-        function startProcess() {
-            if (!state.apiKey) {
-                showToast('请先配置 API Key', 'error');
-                showApiKeyModal();
-                return;
-            }
-
-            const prompt = getPrompt();
-            if (!prompt && !state.autoRecognize) {
-                showToast('请选择场景或开启自动识别', 'error');
-                return;
-            }
-
-            if (!state.inputDir) {
-                showToast('请先上传产品图', 'error');
-                return;
-            }
-
-            const imagesPerProduct = parseInt(document.getElementById('imagesPerProduct').value);
-
-            document.getElementById('readyState').style.display = 'none';
-            document.getElementById('processingState').style.display = 'block';
-            document.getElementById('completedState').style.display = 'none';
-
-            fetch('/api/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    input_dir: state.inputDir,
-                    prompt: prompt,
-                    images_per_product: imagesPerProduct,
-                    api_key: state.apiKey,
-                    auto_recognize: state.autoRecognize,
-                }),
-            })
-            .then(async r => {
-                if (!r.ok) {
-                    try {
-                        const json = await r.json();
-                        throw new Error(json.error || '请求失败');
-                    } catch (e) {
-                        throw new Error(`服务器错误 (${r.status})`);
-                    }
-                }
-                return r.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    showToast(data.error, 'error');
-                    document.getElementById('readyState').style.display = 'block';
-                    document.getElementById('processingState').style.display = 'none';
-                    return;
-                }
-                
-                state.taskId = data.task_id;
-                localStorage.setItem('currentTaskId', state.taskId);
-                localStorage.setItem('currentInputDir', state.inputDir || '');
-                
-                if (data.status === 'completed' || data.status === 'failed') {
-                    // Vercel synchronous response
-                    if (data.status === 'completed') {
-                        showCompleted(data);
-                    } else {
-                        showFailed(data);
-                    }
-                } else {
-                    // Local background thread response
-                    startPolling();
-                    showToast('处理任务已启动', 'success');
-                }
-            })
-            .catch(err => {
-                showToast('启动失败: ' + err.message, 'error');
-                document.getElementById('readyState').style.display = 'block';
-                document.getElementById('processingState').style.display = 'none';
-            });
-        }
-
-        function startPolling() {
-            if (state.pollTimer) clearInterval(state.pollTimer);
-            state.pollTimer = setInterval(pollTask, 1500);
-            pollTask();
-        }
-
-        function pollTask() {
-            if (!state.taskId) return;
-
-            fetch(`/api/task/${state.taskId}`)
-                .then(r => r.json())
-                .then(data => {
-                    updateProgress(data);
-
-                    if (data.status === 'completed') {
-                        clearInterval(state.pollTimer);
-                        showCompleted(data);
-                    } else if (data.status === 'failed') {
-                        clearInterval(state.pollTimer);
-                        showFailed(data);
-                    }
-                });
-        }
-
-        function updateProgress(data) {
-            const progress = data.progress || {};
-            const percent = progress.percent || 0;
-
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressText').textContent = percent + '%';
-            document.getElementById('currentFile').textContent =
-                progress.current_file ? `${progress.current_file} - ${progress.detail || ''}` : '准备中...';
-
-            const logContainer = document.getElementById('logContainer');
-            const logs = data.log || [];
-            logContainer.innerHTML = logs.map(l => `
-                <div class="log-entry">
-                    <span class="time">${l.time}</span>
-                    <span class="status-${l.status}">[${l.status === 'completed' ? '✓' : l.status === 'failed' ? '✗' : '●'}]</span>
-                    <span>${l.file} ${l.detail || ''}</span>
-                </div>
-            `).join('');
-            logContainer.scrollTop = logContainer.scrollHeight;
-
-            if (data.output_files && data.output_files.length > 0) {
-                renderResults(data.output_files);
-            }
-        }
-
-        function showCompleted(data) {
-            document.getElementById('processingState').style.display = 'none';
-            document.getElementById('completedState').style.display = 'block';
-
-            const result = data.result || {};
-            let statsHtml = `
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--success);">${result.success || 0}</div>
-                    <div class="stat-label">成功</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--danger);">${result.failed || 0}</div>
-                    <div class="stat-label">失败</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.output_files ? data.output_files.length : 0}</div>
-                    <div class="stat-label">生成图片</div>
-                </div>
-            `;
-            document.getElementById('statsRow').innerHTML = statsHtml;
-
-            const recognition = data.recognition || {};
-            if (Object.keys(recognition).length > 0) {
-                let recHtml = '<div style="margin-top: 24px; padding: 24px; background: var(--bg-hover); border-radius: var(--radius-md);">';
-                recHtml += '<div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>AI 识别结果</div>';
-                Object.entries(recognition).forEach(([fname, rec]) => {
-                    recHtml += `<div style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">`;
-                    recHtml += `<div style="font-size: 14px; color: var(--text-main); font-weight: 500;">${fname}</div>`;
-                    recHtml += `<div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">`;
-                    recHtml += `<span style="color: var(--text-main); font-weight: 500;">${rec.product_type}</span> · ${rec.product_name}`;
-                    if (rec.suitable_scenes && rec.suitable_scenes.length > 0) {
-                        recHtml += `<div style="margin-top: 6px; color: var(--text-light);">匹配场景: ${rec.suitable_scenes.slice(0, 3).map(s => s.substring(0, 20) + '...').join(' | ')}</div>`;
-                    }
-                    recHtml += `</div></div>`;
-                });
-                recHtml += '</div>';
-                document.getElementById('statsRow').insertAdjacentHTML('afterend', recHtml);
-            }
-
-            renderResults(data.output_files || []);
-            showToast('处理完成！', 'success');
-        }
-
-        function showFailed(data) {
-            document.getElementById('processingState').style.display = 'none';
-            document.getElementById('completedState').style.display = 'block';
-
-            document.getElementById('statsRow').innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--danger);">✗</div>
-                    <div class="stat-label">处理失败</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">生成图片</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">成功</div>
-                </div>
-            `;
-
-            showToast('处理失败: ' + (data.error || '未知错误'), 'error');
-        }
-
-        function renderResults(files) {
-            const area = document.getElementById('resultsArea');
-            const header = document.getElementById('resultsHeader');
-            
-            if (!files.length) {
-                header.style.display = 'none';
-                area.innerHTML = '<div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><p>暂无结果</p></div>';
-                return;
-            }
-
-            header.style.display = 'flex';
-            document.getElementById('resultCountBadge').textContent = `${files.length} 张`;
-
-            area.innerHTML = `<div class="results-grid">${files.map(f => `
-                <div class="result-card fade-in" id="result-${f.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="showImagePreview('/api/output/${state.taskId}/${f}')">
-                    <img src="/api/output/${state.taskId}/${f}" alt="${f}" loading="lazy">
-                    <div class="result-label">${f}</div>
-                    <div class="overlay">
-                        <div class="overlay-btns">
-                            <a class="btn-icon" href="/api/output/${state.taskId}/${f}" download="${f}" onclick="event.stopPropagation()" title="下载">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            </a>
-                            <button class="btn-icon delete" onclick="deleteResultFile('${f}', event)" title="删除">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <div class="d-flex gap-2" id="resultActions" style="display:none">
+                            <button class="btn-outline-app" style="padding:6px 14px;font-size:12px" onclick="downloadAll()">
+                                <i class="bi bi-download me-1"></i><span data-i18n="download_all">下载全部</span>
                             </button>
                         </div>
                     </div>
+                    <div id="resultArea">
+                        <div class="empty-state">
+                            <i class="bi bi-image"></i>
+                            <p data-i18n="no_results">处理结果将在此处显示</p>
+                        </div>
+                    </div>
                 </div>
-            `).join('')}</div>`;
+            </div>
+        </div>
+    </main>
+
+    <!-- 灯箱大图预览 -->
+    <div class="lightbox-overlay" id="lightbox" onclick="lightboxClose(event)">
+        <div class="lightbox-filename" id="lightboxFilename"></div>
+        <button class="lightbox-close" onclick="closeLightbox()"><i class="bi bi-x-lg"></i></button>
+        <button class="lightbox-nav prev" onclick="lightboxPrev(event)"><i class="bi bi-chevron-left"></i></button>
+        <img id="lightboxImg" src="" alt="Preview" onclick="event.stopPropagation()">
+        <button class="lightbox-nav next" onclick="lightboxNext(event)"><i class="bi bi-chevron-right"></i></button>
+        <div class="lightbox-counter" id="lightboxCounter"></div>
+    </div>
+
+    <!-- 悬浮胶囊按钮（居中大号） -->
+    <div class="fab-progress-pill" id="fabProgressPill">
+        <span class="spinner-sm" style="width:12px;height:12px;border-width:1.5px;border-top-color:var(--info)"></span>
+        <span id="fabProgressText"></span>
+    </div>
+    <div class="fab-capsule" id="fabCapsule">
+        <!-- 微信二维码区域 -->
+        <div class="fab-wechat" id="fabWechat" onclick="toggleQrPopup(event)">
+            <img class="fab-qr-thumb" src="/static/wechat-qr.png" alt="微信">
+            <div class="fab-wechat-label">
+                <strong data-i18n="wechat_title">添加微信咨询</strong>
+                <span data-i18n="wechat_desc">专业电商产品图处理</span>
+            </div>
+            <!-- 二维码弹出大图 -->
+            <div class="fab-qr-popup" id="fabQrPopup">
+                <img src="/static/wechat-qr.png" alt="微信二维码">
+                <div class="qr-popup-text">
+                    扫码添加微信
+                    <small data-i18n="wechat_desc">专业电商产品图处理</small>
+                </div>
+            </div>
+        </div>
+        <span class="fab-count-badge" id="fabCountBadge" style="display:none">0</span>
+        <div class="fab-select-wrap">
+            <select id="imagesPerProduct">
+                <option value="1">1张</option>
+                <option value="2">2张</option>
+                <option value="3" selected>3张</option>
+                <option value="5">5张</option>
+                <option value="8">8张</option>
+            </select>
+        </div>
+        <button class="fab-capsule-btn" id="startBtn" onclick="startProcess()" disabled>
+            <i class="bi bi-play-fill"></i><span data-i18n="start_process">开始生成</span>
+        </button>
+    </div>
+
+    <!-- 授权码弹窗 -->
+    <div class="modal fade license-modal" id="licenseModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <h4 class="fw-bold mb-1">🔐</h4>
+                    <h5 class="fw-bold mb-3" data-i18n="license_modal_title">输入授权码</h5>
+                    <div id="licenseError" class="alert alert-danger d-none py-2" style="font-size:13px"></div>
+                    <div id="licenseSuccess" class="alert alert-success d-none py-2" style="font-size:13px"></div>
+                    <input type="text" id="licenseInput" class="license-input w-100 mb-3" placeholder="WB-XXXXXXXXXXXX" maxlength="15">
+                    <button class="btn-primary-app w-100 mb-2" onclick="activateLicense()">
+                        <span data-i18n="activate">激活</span>
+                    </button>
+                    <button class="btn-outline-app w-100" onclick="requestTrial()" style="font-size:13px;padding:10px">
+                        <span data-i18n="request_trial">申请试用授权码</span>
+                    </button>
+                    <p class="text-muted mt-3 mb-0" style="font-size:11px" data-i18n="trial_hint">试用授权码有效期7天，每日限10次</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API 配置弹窗 -->
+    <div class="modal fade api-config-modal" id="apiConfigModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-2 px-4 pt-4">
+                    <h5 class="modal-title fw-bold">API 配置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-1 px-4 pb-3">
+                    <!-- 中转站卡片选择 -->
+                    <div style="margin-bottom:16px">
+                        <label class="detail-label">选择 API 中转站</label>
+                    </div>
+                    <div class="proxy-grid" id="proxyGrid"></div>
+
+                    <!-- 选中后展开的详情区域 -->
+                    <div id="apiDetailArea" class="api-detail-area" style="display:none">
+                        <!-- 显示名称 -->
+                        <div class="mb-3">
+                            <div class="detail-label">显示名称</div>
+                            <input type="text" id="apiDisplayName" class="form-control-app" readonly style="background:var(--bg-hover);cursor:default">
+                        </div>
+
+                        <!-- API Key -->
+                        <div class="mb-3">
+                            <div class="detail-label">API Key <span style="color:var(--danger)">*</span></div>
+                            <input type="password" id="apiKeyInput" class="form-control-app" placeholder="sk-xxxxxxxxxxxxxxxx">
+                        </div>
+
+                        <!-- 模型名称 -->
+                        <div class="mb-3">
+                            <div class="detail-label">模型名称</div>
+                            <input type="text" id="modelSelect" class="form-control-app" placeholder="输入模型名称，如 gemini-2.5-flash-preview-05-20">
+                        </div>
+
+                        <!-- Base URL（只读显示） -->
+                        <div class="mb-3">
+                            <div class="detail-label">Base URL</div>
+                            <input type="text" id="baseUrlDisplay" class="form-control-app" readonly style="background:var(--bg-hover);cursor:default;font-size:13px;color:var(--text-muted)">
+                        </div>
+
+                        <!-- 自定义 URL（仅自定义时显示） -->
+                        <div class="mb-3 custom-url-row" id="customUrlRow" style="display:none">
+                            <div class="detail-label">自定义地址</div>
+                            <input type="text" id="customUrl" class="form-control-app" placeholder="https://your-proxy.com/v1">
+                        </div>
+
+                        <!-- API 协议 -->
+                        <div class="mb-3">
+                            <div class="detail-label">API 协议</div>
+                            <div class="protocol-group">
+                                <button class="protocol-btn active" id="protocolOpenAI" onclick="setProtocol('openai')">OpenAI</button>
+                                <button class="protocol-btn" id="protocolGoogle" onclick="setProtocol('google')">Google API</button>
+                            </div>
+                        </div>
+
+                        <!-- 验证结果 -->
+                        <div id="apiCheckResult" class="mb-3" style="font-size:12px;font-weight:600;display:none"></div>
+
+                        <!-- 操作按钮行 -->
+                                <button class="btn-save" id="saveApiBtn" onclick="saveAndVerify()">保存配置</button>
+                            </div>
+                            <button class="api-cancel-btn" onclick="closeApiModal()">取消</button>
+                    </div>
+
+                    <!-- 未选择时的提示 -->
+                    <div id="apiEmptyTip" class="text-center py-4" style="color:var(--text-light);font-size:14px">
+                        请先选择一个 API 中转站
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // ====== 多语言 ======
+    const i18n = {
+        zh: {
+            subtitle: 'AI Background Replacement',
+            license_not_set: '未设置授权码',
+            license_active: '授权码已激活',
+            upload_title: '上传产品图',
+            upload_hint: '拖拽图片到此处或点击上传',
+            upload_formats: '支持 JPG、PNG、WebP 格式',
+            api_config_title: 'API 配置',
+            api_not_configured: '未配置',
+            api_connected: '已连接',
+            api_checking: '验证中...',
+            proxy_site_label: 'API 中转站',
+            select_proxy_site: '请选择中转站',
+            custom_url_label: '中转站地址',
+            api_key_label: 'API Key',
+            model_label: '模型选择',
+            select_model_after_site: '选择中转站后可选模型',
+            verify: '验证',
+            scene_title: '场景设置',
+            auto_recognize: '🤖 AI 自动识别产品',
+            auto_recognize_desc: '自动识别产品类型并匹配最佳场景',
+            custom_prompt: '自定义场景描述',
+            custom_prompt_placeholder: '描述你想要的背景风格...',
+            output_title: '输出设置',
+            images_per_product: '每张产品生成',
+            start_process: '开始处理',
+            processing: '处理中...',
+            progress_title: '处理进度',
+            result_title: '处理结果',
+            download_all: '下载全部',
+            no_results: '处理结果将在此处显示',
+            license_modal_title: '输入授权码',
+            activate: '激活',
+            request_trial: '申请试用授权码',
+            trial_hint: '试用授权码有效期7天，每日限10次',
+            wechat_title: '添加微信咨询',
+            wechat_desc: '专业电商产品图处理',
+            license_required: '请先设置授权码',
+            upload_first: '请先上传产品图',
+            api_key_required: '请先配置 API Key',
+            process_complete: '处理完成',
+            process_failed: '处理失败',
+        },
+        en: {
+            subtitle: 'Studio · AI Background Replace',
+            license_not_set: 'No License',
+            license_active: 'Licensed',
+            upload_title: 'Upload Products',
+            upload_hint: 'Drag images or click to upload',
+            upload_formats: 'Support JPG, PNG, WebP',
+            api_config_title: 'API Config',
+            api_not_configured: 'Not Configured',
+            api_connected: 'Connected',
+            api_checking: 'Checking...',
+            proxy_site_label: 'API Proxy Site',
+            select_proxy_site: 'Select proxy site',
+            custom_url_label: 'Proxy URL',
+            api_key_label: 'API Key',
+            model_label: 'Model',
+            select_model_after_site: 'Select site first',
+            verify: 'Verify',
+            scene_title: 'Scene Settings',
+            auto_recognize: '🤖 AI Auto Recognize',
+            auto_recognize_desc: 'Auto-detect product type & match scenes',
+            custom_prompt: 'Custom Scene Description',
+            custom_prompt_placeholder: 'Describe your desired background...',
+            output_title: 'Output Settings',
+            images_per_product: 'Images per product',
+            start_process: 'Start Processing',
+            processing: 'Processing...',
+            progress_title: 'Progress',
+            result_title: 'Results',
+            download_all: 'Download All',
+            no_results: 'Results will appear here',
+            license_modal_title: 'Enter License Key',
+            activate: 'Activate',
+            request_trial: 'Request Trial License',
+            trial_hint: 'Trial license: 7 days, 10 uses/day',
+            wechat_title: 'WeChat Contact',
+            wechat_desc: 'Professional product image processing',
+            license_required: 'Please set license key first',
+            upload_first: 'Please upload product images first',
+            api_key_required: 'Please configure API Key first',
+            process_complete: 'Processing complete',
+            process_failed: 'Processing failed',
+        },
+        ru: {
+            subtitle: 'Студия · AI Замена фона',
+            license_not_set: 'Нет лицензии',
+            license_active: 'Лицензия активна',
+            upload_title: 'Загрузить фото',
+            upload_hint: 'Перетащите или нажмите для загрузки',
+            upload_formats: 'Поддержка JPG, PNG, WebP',
+            api_config_title: 'API Конфигурация',
+            api_not_configured: 'Не настроено',
+            api_connected: 'Подключено',
+            api_checking: 'Проверка...',
+            proxy_site_label: 'API Прокси',
+            select_proxy_site: 'Выберите прокси',
+            custom_url_label: 'URL прокси',
+            api_key_label: 'API Ключ',
+            model_label: 'Модель',
+            select_model_after_site: 'Сначала выберите прокси',
+            verify: 'Проверить',
+            scene_title: 'Настройки сцены',
+            auto_recognize: '🤖 AI Распознавание',
+            auto_recognize_desc: 'Автоопределение типа продукта и подбор сцен',
+            custom_prompt: 'Описание сцены',
+            custom_prompt_placeholder: 'Опишите желаемый фон...',
+            output_title: 'Настройки вывода',
+            images_per_product: 'Изображений на товар',
+            start_process: 'Начать обработку',
+            processing: 'Обработка...',
+            progress_title: 'Прогресс',
+            result_title: 'Результаты',
+            download_all: 'Скачать все',
+            no_results: 'Результаты появятся здесь',
+            license_modal_title: 'Введите лицензионный ключ',
+            activate: 'Активировать',
+            request_trial: 'Получить пробную лицензию',
+            trial_hint: 'Пробная лицензия: 7 дней, 10 использований/день',
+            wechat_title: 'WeChat Контакт',
+            wechat_desc: 'Профессиональная обработка фото товаров',
+            license_required: 'Сначала установите лицензионный ключ',
+            upload_first: 'Сначала загрузите фото товаров',
+            api_key_required: 'Сначала настройте API ключ',
+            process_complete: 'Обработка завершена',
+            process_failed: 'Ошибка обработки',
+        }
+    };
+    let currentLang = localStorage.getItem('lang') || 'zh';
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        document.querySelectorAll('.lang-switch').forEach(el => el.classList.toggle('active', el.dataset.lang === lang));
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (i18n[lang][key]) el.textContent = i18n[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.dataset.i18nPlaceholder;
+            if (i18n[lang][key]) el.placeholder = i18n[lang][key];
+        });
+    }
+
+    function t(key) { return i18n[currentLang][key] || key; }
+
+    // ====== 全局状态 ======
+    let licenseKey = localStorage.getItem('license_key') || '';
+    let sessionId = localStorage.getItem('session_id') || '';
+    let inputDir = localStorage.getItem('input_dir') || '';
+    let uploadedFiles = [];
+    let currentTaskId = null;
+    let autoRecognize = false;
+    let selectedScene = '';
+    let pollTimer = null;
+    let proxySites = []; // 中转站列表缓存
+    let apiConnected = false; // API 连接状态
+    // 历史任务缓存（localStorage 持久化）
+    const TASK_CACHE_KEY = 'varia_task_history';
+    let taskHistoryCache = JSON.parse(localStorage.getItem(TASK_CACHE_KEY) || '{}');
+
+    // ====== 初始化 ======
+    document.addEventListener('DOMContentLoaded', () => {
+        setLang(currentLang);
+        loadScenes();
+        updateLicenseUI();
+        updateStartButton();
+        setupUpload();
+        restoreApiConfig();
+        if (licenseKey) {
+            loadProxySites();
+        }
+        restoreCachedState();  // 恢复缓存的文件列表和历史结果
+
+        // 懒加载图片
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) {
+                        const img = e.target;
+                        if (img.dataset.lazy) { img.src = img.dataset.lazy; observer.unobserve(img); }
+                    }
+                });
+            });
+            document.querySelectorAll('img[data-lazy]').forEach(img => observer.observe(img));
+        }
+    });
+
+    // ====== 中转站配置（卡片式） ======
+    let selectedProxyId = '';
+    let selectedProtocol = 'openai';
+
+    async function loadProxySites() {
+        try {
+            const resp = await fetch('/api/proxy-sites');
+            const data = await resp.json();
+            proxySites = data.sites || [];
+            renderProxyCards();
+            // 恢复已保存的选择
+            const savedSite = localStorage.getItem('proxy_site_id');
+            if (savedSite) selectProxyCard(savedSite);
+        } catch (e) { console.error('加载中转站列表失败:', e); }
+    }
+
+    function renderProxyCards() {
+        const grid = document.getElementById('proxyGrid');
+        grid.innerHTML = proxySites.map(site => `
+            <div class="proxy-card" id="proxy_${site.id}" onclick="selectProxyCard('${site.id}')">
+                <div class="pc-name">${site.name}</div>
+                <div class="pc-desc">${site.description || ''}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectProxyCard(siteId) {
+        selectedProxyId = siteId;
+        // 更新卡片选中状态
+        document.querySelectorAll('.proxy-card').forEach(c => c.classList.remove('selected'));
+        const selectedEl = document.getElementById('proxy_' + siteId);
+        if (selectedEl) selectedEl.classList.add('selected');
+
+        // 显示详情区域，隐藏空提示
+        document.getElementById('apiDetailArea').style.display = 'block';
+        document.getElementById('apiEmptyTip').style.display = 'none';
+
+        // 填充站点信息
+        const site = proxySites.find(s => s.id === siteId);
+        if (!site) return;
+
+        document.getElementById('apiDisplayName').value = site.name;
+        document.getElementById('baseUrlDisplay').value = site.base_url;
+
+        // 自定义站点显示 URL 输入框
+        const customRow = document.getElementById('customUrlRow');
+        if (siteId === 'custom') {
+            customRow.style.display = 'block';
+            document.getElementById('baseUrlDisplay').value = '自定义 API 端点';
+        } else {
+            customRow.style.display = 'none';
         }
 
-        function deleteResultFile(filename, event) {
-            event.stopPropagation();
-            if (!confirm(`确定要删除生成结果 "${filename}" 吗？`)) return;
-            
-            fetch(`/api/output/${state.taskId}/${encodeURIComponent(filename)}`, {
-                method: 'DELETE'
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const cardId = `result-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                    const el = document.getElementById(cardId);
-                    if (el) el.remove();
-                    
-                    const countBadge = document.getElementById('resultCountBadge');
-                    let currentCount = parseInt(countBadge.textContent);
-                    if (!isNaN(currentCount) && currentCount > 0) {
-                        countBadge.textContent = `${currentCount - 1} 张`;
+        // 模型输入框：直接填入
+        const modelInput = document.getElementById('modelSelect');
+
+        // 恢复已保存的值
+        const savedKey = localStorage.getItem('api_key') || '';
+        const savedModel = localStorage.getItem('api_model') || '';
+        const savedCustomUrl = localStorage.getItem('custom_url') || '';
+        document.getElementById('apiKeyInput').value = savedKey;
+        if (savedModel) modelInput.value = savedModel;
+        if (savedCustomUrl) document.getElementById('customUrl').value = savedCustomUrl;
+
+        // 隐藏之前的验证结果
+        document.getElementById('apiCheckResult').style.display = 'none';
+    }
+
+    function setProtocol(proto) {
+        selectedProtocol = proto;
+        document.querySelectorAll('.protocol-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(proto === 'openai' ? 'protocolOpenAI' : 'protocolGoogle').classList.add('active');
+    }
+
+    function getBaseUrl() {
+        if (selectedProxyId === 'custom') {
+            return document.getElementById('customUrl').value.trim();
+        }
+        const site = proxySites.find(s => s.id === selectedProxyId);
+        return site ? site.base_url : '';
+    }
+
+    function saveApiConfig() {
+        localStorage.setItem('proxy_site_id', selectedProxyId);
+        localStorage.setItem('custom_url', document.getElementById('customUrl').value.trim());
+        localStorage.setItem('api_key', document.getElementById('apiKeyInput').value.trim());
+        localStorage.setItem('api_model', document.getElementById('modelSelect').value);
+        localStorage.setItem('api_protocol', selectedProtocol);
+        apiConnected = false;
+        updateApiStatus();
+        updateStartButton();
+    }
+
+    function restoreApiConfig() {
+        const savedSite = localStorage.getItem('proxy_site_id') || '';
+        const savedKey = localStorage.getItem('api_key') || '';
+        const savedProto = localStorage.getItem('api_protocol') || 'openai';
+        setProtocol(savedProto);
+
+        if (savedSite && proxySites.length > 0) {
+            selectProxyCard(savedSite);
+        }
+        if (savedKey && savedSite) {
+            apiConnected = true;
+            updateApiStatus();
+        }
+    }
+
+    async function testConnection() {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        const baseUrl = getBaseUrl();
+
+        if (!apiKey) { alert('请输入 API Key'); return; }
+        if (!baseUrl) { alert('请先选择中转站'); return; }
+
+        const resultEl = document.getElementById('apiCheckResult');
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = '<span style="color:#F59E0B">&#9203; 测试连接中...</span>';
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (licenseKey) headers['X-License-Key'] = licenseKey;
+            const resp = await fetch('/api/check-api', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ api_key: apiKey, base_url: baseUrl, protocol: selectedProtocol })
+            });
+            const data = await resp.json();
+            if (data.valid) {
+                resultEl.innerHTML = '<span style="color:#10B981">&#10003; 连接成功！</span>';
+            } else {
+                resultEl.innerHTML = '<span style="color:#EF4444">&#10007; ' + (data.message || '连接失败') + '</span>';
+            }
+        } catch (e) {
+            resultEl.innerHTML = '<span style="color:#EF4444">&#10007; 网络错误</span>';
+        }
+    }
+
+    async function saveAndVerify() {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        const baseUrl = getBaseUrl();
+
+        if (!selectedProxyId) { alert('请选择一个 API 中转站'); return; }
+        if (!apiKey) { alert('请输入 API Key'); return; }
+        if (!baseUrl && selectedProxyId !== 'custom') { alert('该中转站地址无效'); return; }
+
+        const saveBtn = document.getElementById('saveApiBtn');
+        const resultEl = document.getElementById('apiCheckResult');
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = '<span style="color:#F59E0B">&#9203; 正在验证...';
+
+        saveApiConfig(); // 先保存
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (licenseKey) headers['X-License-Key'] = licenseKey;
+            const resp = await fetch('/api/check-api', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ api_key: apiKey, base_url: baseUrl, protocol: selectedProtocol })
+            });
+            const data = await resp.json();
+            if (data.valid) {
+                apiConnected = true;
+                updateApiStatus();
+                resultEl.innerHTML = '<span style="color:#10B981">&#10003; 配置已保存，API 连接成功！</span>';
+                setTimeout(() => closeApiModal(), 1200);
+            } else {
+                apiConnected = false;
+                updateApiStatus();
+                resultEl.innerHTML = '<span style="color:#EF4444">&#10007; 已保存但验证失败: ' + (data.message || '') + '</span>';
+            }
+        } catch (e) {
+            resultEl.innerHTML = '<span style="color:#10B981">&#10003; 配置已保存（网络不可用，跳过验证）</span>';
+            setTimeout(() => closeApiModal(), 800);
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存配置';
+        updateStartButton();
+    }
+
+    function closeApiModal() {
+        const m = bootstrap.Modal.getInstance(document.getElementById('apiConfigModal'));
+        if (m) m.hide();
+    }
+
+    function updateApiStatus() {
+        const btn = document.getElementById('apiStatusBtn');
+        const text = document.getElementById('apiStatusTextNav');
+        if (apiConnected) {
+            btn.classList.add('connected');
+            text.textContent = t('api_connected');
+        } else {
+            btn.classList.remove('connected');
+            text.textContent = t('api_not_configured');
+        }
+    }
+
+    async function showApiModal() {
+        if (!licenseKey) {
+            alert(t('license_required'));
+            showLicenseModal();
+            return;
+        }
+        if (!proxySites.length) {
+            await loadProxySites();
+        }
+        new bootstrap.Modal(document.getElementById('apiConfigModal')).show();
+    }
+
+    // ====== 授权码 ======
+    function showLicenseModal() {
+        document.getElementById('licenseError').classList.add('d-none');
+        document.getElementById('licenseSuccess').classList.add('d-none');
+        document.getElementById('licenseInput').value = licenseKey;
+        new bootstrap.Modal(document.getElementById('licenseModal')).show();
+    }
+
+    async function activateLicense() {
+        const code = document.getElementById('licenseInput').value.trim().toUpperCase();
+        if (!code) return;
+
+        const errEl = document.getElementById('licenseError');
+        const succEl = document.getElementById('licenseSuccess');
+        errEl.classList.add('d-none');
+        succEl.classList.add('d-none');
+
+        try {
+            const resp = await fetch('/api/license/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ license_key: code })
+            });
+            const data = await resp.json();
+            if (data.valid) {
+                licenseKey = code;
+                localStorage.setItem('license_key', code);
+                succEl.textContent = '✅ ' + data.reason;
+                succEl.classList.remove('d-none');
+                updateLicenseUI();
+                setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('licenseModal')).hide(), 1000);
+            } else {
+                errEl.textContent = '❌ ' + data.reason;
+                errEl.classList.remove('d-none');
+            }
+        } catch (e) {
+            errEl.textContent = '网络错误，请重试';
+            errEl.classList.remove('d-none');
+        }
+    }
+
+    async function requestTrial() {
+        const errEl = document.getElementById('licenseError');
+        const succEl = document.getElementById('licenseSuccess');
+        errEl.classList.add('d-none');
+
+        try {
+            const resp = await fetch('/api/license/trial', { method: 'POST' });
+            const data = await resp.json();
+            if (data.license_key) {
+                licenseKey = data.license_key;
+                localStorage.setItem('license_key', licenseKey);
+                document.getElementById('licenseInput').value = licenseKey;
+                succEl.textContent = `✅ 试用授权码已生成: ${licenseKey}`;
+                succEl.classList.remove('d-none');
+                updateLicenseUI();
+                await loadProxySites();
+                restoreApiConfig();
+            } else {
+                errEl.textContent = '❌ ' + (data.error || '申请失败');
+                errEl.classList.remove('d-none');
+            }
+        } catch (e) {
+            errEl.textContent = '网络错误，请重试';
+            errEl.classList.remove('d-none');
+        }
+    }
+
+    function updateLicenseUI() {
+        const badge = document.getElementById('licenseBadge');
+        if (licenseKey) {
+            badge.classList.add('active');
+            badge.innerHTML = `<span class="dot"></span><span>${t('license_active')}</span>`;
+        } else {
+            badge.classList.remove('active');
+            badge.innerHTML = `<span class="dot"></span><span>${t('license_not_set')}</span>`;
+        }
+        updateStartButton();
+    }
+
+    // ====== 场景加载 ======
+    async function loadScenes() {
+        try {
+            const resp = await fetch('/api/scenes');
+            const data = await resp.json();
+            const grid = document.getElementById('sceneGrid');
+            grid.innerHTML = Object.entries(data.scenes).map(([name, desc]) =>
+                `<div class="scene-chip" data-scene="${desc}" onclick="selectScene(this, '${desc}')">${name}</div>`
+            ).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    function selectScene(el, desc) {
+        document.querySelectorAll('.scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedScene = desc;
+        updateStartButton();
+    }
+
+    function toggleAutoRecognize() {
+        autoRecognize = !autoRecognize;
+        document.getElementById('autoRecognizeToggle').classList.toggle('active', autoRecognize);
+        updateStartButton();
+    }
+
+    // ====== 文件上传 ======
+    function setupUpload() {
+        const zone = document.getElementById('uploadZone');
+        const input = document.getElementById('fileInput');
+
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+        input.addEventListener('change', e => handleFiles(e.target.files));
+    }
+
+    // ====== 缓存持久化 ======
+    function saveTaskToCache(taskId, files) {
+        taskHistoryCache[taskId] = {
+            files: files,
+            timestamp: Date.now(),
+        };
+        localStorage.setItem(TASK_CACHE_KEY, JSON.stringify(taskHistoryCache));
+    }
+
+    function restoreCachedState() {
+        // 恢复上传文件列表 —— 通过服务端API获取该session的已上传文件
+        if (sessionId) {
+            fetch(`/api/session-files/${sessionId}`)
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.files && data.files.length > 0) {
+                        uploadedFiles = data.files;
+                        renderFileList();
+                        updateStartButton();
+                    } else {
+                        // session 已无文件，清空本地缓存
+                        uploadedFiles = [];
+                        renderFileList();
+                        updateStartButton();
                     }
-                    
-                    showToast('已删除结果图片', 'success');
-                } else {
-                    showToast(data.error || '删除失败', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('删除请求失败: ' + err.message, 'error');
+                })
+                .catch(() => {
+                    // session 已失效
+                    uploadedFiles = [];
+                    renderFileList();
+                    updateStartButton();
+                });
+        }
+
+        // 恢复历史任务结果
+        const historyKeys = Object.keys(taskHistoryCache);
+        if (historyKeys.length === 0) return;
+
+        let hasResults = false;
+        for (const tid of historyKeys) {
+            const cached = taskHistoryCache[tid];
+            if (cached && cached.files && cached.files.length > 0) {
+                hasResults = true;
+                break;
+            }
+        }
+
+        if (hasResults) {
+            // 渲染所有缓存的历史任务结果
+            renderAllCachedHistory();
+        }
+    }
+
+    function renderAllCachedHistory() {
+        const area = document.getElementById('resultArea');
+        const actions = document.getElementById('resultActions');
+        const countEl = document.getElementById('resultCount');
+
+        let allFiles = [];
+        for (const tid of Object.keys(taskHistoryCache)) {
+            const cached = taskHistoryCache[tid];
+            if (!cached || !cached.files || !cached.files.length) continue;
+
+            // 为每个文件标记所属的 taskId，方便渲染时使用正确的 URL
+            cached.files.forEach(f => {
+                allFiles.push({ name: f.name || f, taskId: tid });
             });
         }
 
-        function downloadResults() {
-            if (!state.taskId) return;
-            window.location.href = `/api/download/${state.taskId}`;
-            showToast('正在打包下载...', 'info');
+        if (allFiles.length === 0) {
+            area.innerHTML = `<div class="empty-state"><i class="bi bi-image"></i><p>${t('no_results')}</p></div>`;
+            actions.style.display = 'none';
+            countEl.textContent = '0';
+            return;
         }
 
-        function resetAll() {
-            state.sessionId = null;
-            state.inputDir = null;
-            state.uploadedFiles = [];
-            state.selectedScene = null;
-            state.taskId = null;
-            state.autoRecognize = false;
-            localStorage.removeItem('currentTaskId');
-            localStorage.removeItem('currentInputDir');
+        countEl.textContent = allFiles.length;
+        actions.style.display = 'flex';
 
-            document.getElementById('fileList').innerHTML = '';
-            document.getElementById('fileCountBadge').textContent = '0 张';
-            document.getElementById('customPrompt').value = '';
-            document.getElementById('imagesPerProduct').value = '3';
-            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('selected'));
+        // 构建灯箱图片列表
+        const allLightboxImages = allFiles.map(item => ({
+            src: `/api/output/${item.taskId}/${encodeURIComponent(item.name)}?license_key=${licenseKey}`,
+            name: item.name
+        }));
 
-            const toggle = document.getElementById('autoRecognizeToggle');
-            toggle.classList.remove('active');
-            document.getElementById('sceneSection').style.display = 'block';
-            document.getElementById('autoRecognizeHint').style.display = 'none';
-
-            document.getElementById('readyState').style.display = 'block';
-            document.getElementById('processingState').style.display = 'none';
-            document.getElementById('completedState').style.display = 'none';
-
-            document.getElementById('resultsHeader').style.display = 'none';
-            document.getElementById('resultsArea').innerHTML =
-                '<div class="empty-state" style="padding-top: 40px; border-top: 1px solid var(--border-color);"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><p>处理完成后结果将显示在这里</p></div>';
-            document.getElementById('resultCountBadge').textContent = '0 张';
-
-            updateStartButton();
-        }
-
-        function showImagePreview(src) {
-            document.getElementById('previewImage').src = src;
-            document.getElementById('imagePreviewModal').classList.add('active');
-        }
-
-        function closeImagePreview() {
-            document.getElementById('imagePreviewModal').classList.remove('active');
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icons = { 
-                success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>', 
-                error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>', 
-                info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>' 
-            };
-            toast.innerHTML = `<span style="display:flex;align-items:center;">${icons[type] || icons.info}</span> ${message}`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(100%)';
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
-        }
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                closeApiKeyModal();
-                closeImagePreview();
-            }
+        // 按任务分组
+        const groupsByTask = {};
+        allFiles.forEach(item => {
+            if (!groupsByTask[item.taskId]) groupsByTask[item.taskId] = [];
+            groupsByTask[item.taskId].push(item);
         });
 
-        init();
+        let html = '<div class="result-groups">';
+        let gi = 0;
+        let globalIdx = 0; // 全局图片索引，用于灯箱定位
+        for (const [tid, items] of Object.entries(groupsByTask)) {
+            const gid = 'rg_' + gi;
+            const firstItem = items[0];
+            const firstFileName = firstItem.name;
+            const thumbSrc = `/api/output/${tid}/${encodeURIComponent(firstFileName)}?license_key=${licenseKey}`;
+
+            html += `
+            <div class="result-group" id="${gid}">
+                <div class="result-group-header" onclick="toggleResultGroup('${gid}')">
+                    <img class="group-thumb lazy-placeholder" data-lazy="${thumbSrc}" alt="" loading="lazy"
+                         onerror="this.onerror=null;this.style.background='var(--bg-hover)'">
+                    <div class="group-info">
+                        <div class="group-source-name">${escapeHtml(tid)} (${items.length} 张)</div>
+                        <div class="group-count">任务 #${gi + 1}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn-icon" style="width:28px;height:28px;font-size:13px;opacity:1;visibility:visible;color:var(--primary);background:rgba(59,130,246,0.1);" onclick="event.stopPropagation();downloadTask('${tid}')" title="下载整个任务"><i class="bi bi-download"></i></button>
+                        <button class="btn-icon" style="width:28px;height:28px;font-size:13px;opacity:1;visibility:visible;color:var(--danger);background:rgba(239,68,68,0.1);" onclick="event.stopPropagation();deleteTask('${tid}')" title="删除整个任务"><i class="bi bi-trash"></i></button>
+                        <div class="group-toggle"><i class="bi bi-chevron-down"></i></div>
+                    </div>
+                </div>
+                <div class="result-group-body">
+                    <div class="result-grid">${items.map(item => {
+                        const f = item.name;
+                        const lbIdx = globalIdx++;
+                        const safeName = escapeJsString(f);
+                        return `
+                        <div class="result-item" style="cursor:pointer" onclick="openLightbox(__allLbImgs, ${lbIdx})">
+                            <img class="lazy-placeholder" data-lazy="/api/output/${tid}/${encodeURIComponent(f)}?license_key=${licenseKey}" alt="${escapeHtml(f)}" loading="lazy"
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'padding:20px;color:var(--text-light);font-size:12px\\'>图片已过期</div>'">
+                            <div class="result-actions">
+                                <button class="btn-icon" style="width:26px;height:26px;font-size:11px;background:rgba(255,255,255,.9)" onclick="event.stopPropagation();downloadOne('${tid}','${safeName}')"><i class="bi bi-download"></i></button>
+                                <button class="btn-icon" style="width:26px;height:26px;font-size:11px;background:rgba(255,255,255,.9)" onclick="event.stopPropagation();deleteOne('${tid}','${safeName}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                            <div class="result-name">${escapeHtml(f)}</div>
+                        </div>`;
+                    }).join('')}
+                    </div>
+                </div>
+            </div>`;
+            gi++;
+        }
+        html += '</div>';
+        area.innerHTML = html;
+
+        // 将灯箱图片列表挂到全局变量
+        window.__allLbImgs = allLightboxImages;
+
+        // 懒加载
+        area.querySelectorAll('img[data-lazy]').forEach(img => {
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => { if (e.isIntersecting) { img.src = img.dataset.lazy; obs.unobserve(img); } });
+            });
+            obs.observe(img);
+        });
+    }
+
+    async function handleFiles(files) {
+        if (!files.length) return;
+
+        const formData = new FormData();
+        const sessionIdField = sessionId || '';
+        formData.append('session_id', sessionIdField);
+        for (const f of files) formData.append('files', f);
+
+        try {
+            const reqHeaders = {};
+            if (licenseKey) reqHeaders['X-License-Key'] = licenseKey;
+            // 不能手动设置 Content-Type，让浏览器自动设置 multipart/form-data + boundary
+            const resp = await fetch('/api/upload-preview', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: reqHeaders,
+            });
+            // 授权失败 → 弹出授权码弹窗
+            if (resp.status === 401 || resp.status === 403) { showLicenseModal(); return; }
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                alert(errData.error || `上传失败 (HTTP ${resp.status})`);
+                return;
+            }
+            const data = await resp.json();
+            if (data.error) { alert(data.error); return; }
+
+            sessionId = data.session_id;
+            inputDir = data.input_dir;
+            uploadedFiles = data.files;
+            // 持久化 session
+            localStorage.setItem('session_id', sessionId);
+            localStorage.setItem('input_dir', inputDir);
+            renderFileList();
+            updateStartButton();
+        } catch (e) {
+            console.error('上传失败:', e);
+            alert('上传失败，请检查网络连接');
+        }
+    }
+
+    function renderFileList() {
+        const list = document.getElementById('fileList');
+        document.getElementById('fileCount').textContent = uploadedFiles.length;
+
+        if (!uploadedFiles.length) { list.innerHTML = ''; return; }
+
+        list.innerHTML = uploadedFiles.map((f, idx) => {
+            const thumbSrc = `/api/preview/${f.session_id || sessionId}/${encodeURIComponent(f.name)}?license_key=${licenseKey}`;
+            const safeName = f.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return `
+            <div class="file-item">
+                <img class="file-thumb" src="${thumbSrc}" alt="${escapeHtml(f.name)}" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect fill=%22%23f4f4f5%22 width=%2244%22 height=%2244%22/><text x=%2222%22 y=%2226%22 font-size=%2212%22 fill=%22%23a1a1aa%22 text-anchor=%22middle%22>📷</text></svg>'">
+                <div class="file-info">
+                    <div class="name">${escapeHtml(f.name)}</div>
+                    <div class="size">${formatSize(f.size)}</div>
+                </div>
+                <button class="btn-icon" onclick="deleteFile(${idx})">✕</button>
+            </div>
+        `;
+        }).join('');
+    }
+
+    async function deleteFile(idx) {
+        const f = uploadedFiles[idx];
+        if (!f) return;
+        const headers = { 'Content-Type': 'application/json' };
+        if (licenseKey) headers['X-License-Key'] = licenseKey;
+
+        try {
+            await fetch(`/api/upload/${sessionId}/${encodeURIComponent(f.name)}`, { method: 'DELETE', headers });
+            uploadedFiles = uploadedFiles.filter((_, i) => i !== idx);
+            renderFileList();
+            updateStartButton();
+        } catch (e) { console.error(e); }
+    }
+
+    // ====== 开始处理 ======
+    function updateStartButton() {
+        const btn = document.getElementById('startBtn');
+        const canStart = licenseKey && uploadedFiles.length > 0;
+        btn.disabled = !canStart;
+        // 更新悬浮胶囊上的文件数量徽章
+        const badge = document.getElementById('fabCountBadge');
+        if (uploadedFiles.length > 0) {
+            badge.textContent = uploadedFiles.length;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async function startProcess() {
+        if (!licenseKey) { showLicenseModal(); return; }
+        if (!uploadedFiles.length) { alert(t('upload_first')); return; }
+
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        const baseUrl = getBaseUrl();
+        const model = document.getElementById('modelSelect').value;
+
+        const prompt = document.getElementById('customPrompt').value.trim() || selectedScene || '';
+        const imagesPerProduct = parseInt(document.getElementById('imagesPerProduct').value);
+
+        const btn = document.getElementById('startBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-sm"></span> ${t('processing')}`;
+        // 显示悬浮胶囊进度提示
+        document.getElementById('fabProgressPill').classList.add('show');
+        document.getElementById('fabProgressText').textContent = '准备中...';
+
+        try {
+            const resp = await fetch('/api/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-License-Key': licenseKey },
+                body: JSON.stringify({
+                    input_dir: inputDir,
+                    prompt,
+                    images_per_product: imagesPerProduct,
+                    auto_recognize: autoRecognize,
+                    api_key: apiKey,
+                    base_url: baseUrl,
+                    model: model,
+                })
+            });
+
+            if (resp.status === 401 || resp.status === 403) {
+                const data = await resp.json();
+                alert(data.error || t('license_required'));
+                showLicenseModal();
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-play-fill"></i><span>${t('start_process')}</span>`;
+                document.getElementById('fabProgressPill').classList.remove('show');
+                return;
+            }
+
+            const data = await resp.json();
+            if (data.error) {
+                alert(data.error);
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-play-fill"></i><span>${t('start_process')}</span>`;
+                document.getElementById('fabProgressPill').classList.remove('show');
+                return;
+            }
+
+            currentTaskId = data.task_id;
+            document.getElementById('progressCard').style.display = 'block';
+            pollTaskStatus();
+
+        } catch (e) {
+            alert('网络错误');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-play-fill"></i><span>${t('start_process')}</span>`;
+            document.getElementById('fabProgressPill').classList.remove('show');
+        }
+    }
+
+    async function pollTaskStatus() {
+        if (!currentTaskId) return;
+
+        try {
+            const resp = await fetch(`/api/task/${currentTaskId}`, {
+                headers: { 'X-License-Key': licenseKey }
+            });
+            const data = await resp.json();
+
+            // 更新进度
+            const prog = data.progress || {};
+            const percent = prog.percent || 0;
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = percent + '%';
+            document.getElementById('progressDetail').textContent = prog.detail || '';
+            // 同步进度到悬浮胶囊上方的进度提示
+            const fabProgText = document.getElementById('fabProgressText');
+            const fabProgPill = document.getElementById('fabProgressPill');
+            if (percent > 0 && percent < 100) {
+                fabProgText.textContent = `${prog.current_file || ''} ${prog.detail || ''} (${percent}%)`;
+                fabProgPill.classList.add('show');
+            } else {
+                fabProgPill.classList.remove('show');
+            }
+
+            // 更新日志
+            if (data.log && data.log.length) {
+                document.getElementById('logList').innerHTML = data.log.slice(-20).map(l => `
+                    <div class="log-item">
+                        <span class="log-time">${l.time}</span>
+                        <span class="log-status ${l.status}">${l.status}</span>
+                        <span>${l.file} ${l.detail ? '- ' + l.detail : ''}</span>
+                    </div>
+                `).join('');
+            }
+
+            // 识别结果
+            if (data.recognition && Object.keys(data.recognition).length) {
+                const first = Object.values(data.recognition)[0];
+                document.getElementById('recognitionCard').style.display = 'block';
+                document.getElementById('recType').textContent = first.product_type;
+                document.getElementById('recName').textContent = first.product_name;
+            }
+
+            if (data.status === 'completed' || data.status === 'failed') {
+                clearInterval(pollTimer);
+                const btn = document.getElementById('startBtn');
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-play-fill"></i><span>${t('start_process')}</span>`;
+                // 清除悬浮胶囊进度提示
+                document.getElementById('fabProgressPill').classList.remove('show');
+
+                if (data.status === 'completed') {
+                    const outputFiles = data.output_files || [];
+                    // 保存结果到缓存
+                    saveTaskToCache(currentTaskId, outputFiles);
+                    // 合并渲染：重新渲染所有的历史结果
+                    renderAllCachedHistory();
+                } else {
+                    alert(t('process_failed') + ': ' + (data.error || ''));
+                }
+                return;
+            }
+
+            pollTimer = setTimeout(pollTaskStatus, 2000);
+        } catch (e) {
+            pollTimer = setTimeout(pollTaskStatus, 3000);
+        }
+    }
+
+    // ====== 结果展示（按源图分组） ======
+    function renderResults(files, taskId) {
+        const area = document.getElementById('resultArea');
+        const actions = document.getElementById('resultActions');
+        document.getElementById('resultCount').textContent = files.length;
+
+        if (!files.length) {
+            area.innerHTML = `<div class="empty-state"><i class="bi bi-image"></i><p>${t('no_results')}</p></div>`;
+            actions.style.display = 'none';
+            return;
+        }
+
+        actions.style.display = 'flex';
+
+        // 按源图文件名分组：从输出文件名中提取源图名称
+        // 输出格式通常为: 源图名_场景_序号.jpg 或类似
+        const groups = {};
+        files.forEach(f => {
+            // 尝试从文件名中提取源图部分（去掉末尾的 _数字 后缀）
+            let sourceName = f.replace(/_\d+\.[^.]+$/, '');  // 去掉 _1.jpg 等
+            if (sourceName === f) {
+                // 如果没匹配到，尝试其他模式
+                sourceName = f.replace(/_[^_]+\.\w+$/, '');
+            }
+            if (!sourceName || sourceName === f) {
+                sourceName = '未分类';
+            }
+            if (!groups[sourceName]) groups[sourceName] = [];
+            groups[sourceName].push(f);
+        });
+
+        // 构建灯箱图片列表（扁平化所有图片）
+        const allLightboxImages = files.map(f => ({
+            src: `/api/output/${taskId}/${encodeURIComponent(f)}`,
+            name: f
+        }));
+
+        // 渲染分组
+        let html = '<div class="result-groups">';
+        let groupIndex = 0;
+        let globalIdx = 0; // 全局图片索引，用于灯箱定位
+        for (const [sourceName, groupFiles] of Object.entries(groups)) {
+            const gid = 'rg_' + groupIndex;
+            // 用该组第一张结果图的路径作为缩略图
+            const firstFile = groupFiles[0];
+            const thumbSrc = `/api/output/${taskId}/${encodeURIComponent(firstFile)}`;
+            html += `
+            <div class="result-group" id="${gid}">
+                <div class="result-group-header" onclick="toggleResultGroup('${gid}')">
+                    <img class="group-thumb lazy-placeholder" data-lazy="${thumbSrc}" alt="" loading="lazy">
+                    <div class="group-info">
+                        <div class="group-source-name">${escapeHtml(sourceName)}</div>
+                        <div class="group-count">${groupFiles.length} 张结果图</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn-icon" style="width:28px;height:28px;font-size:13px;opacity:1;visibility:visible;color:var(--primary);background:rgba(59,130,246,0.1);" onclick="event.stopPropagation();downloadTask('${taskId}')" title="下载整个任务"><i class="bi bi-download"></i></button>
+                        <button class="btn-icon" style="width:28px;height:28px;font-size:13px;opacity:1;visibility:visible;color:var(--danger);background:rgba(239,68,68,0.1);" onclick="event.stopPropagation();deleteTask('${taskId}')" title="删除整个任务"><i class="bi bi-trash"></i></button>
+                        <div class="group-toggle"><i class="bi bi-chevron-down"></i></div>
+                    </div>
+                </div>
+                <div class="result-group-body">
+                    <div class="result-grid">${groupFiles.map(f => {
+                        const lbIdx = globalIdx++;
+                        const safeName = f.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
+                        <div class="result-item" style="cursor:pointer" onclick="openLightbox(__allLbImgs, ${lbIdx})">
+                            <img class="lazy-placeholder" data-lazy="/api/output/${taskId}/${encodeURIComponent(f)}" alt="${escapeHtml(f)}" loading="lazy">
+                            <div class="result-actions">
+                                <button class="btn-icon" style="width:26px;height:26px;font-size:11px;background:rgba(255,255,255,.9)" onclick="event.stopPropagation();downloadOne('${taskId}','${safeName}')"><i class="bi bi-download"></i></button>
+                            </div>
+                            <div class="result-name">${escapeHtml(f)}</div>
+                        </div>`;
+                    }).join('')}</div>
+                </div>
+            </div>`;
+            groupIndex++;
+        }
+        html += '</div>';
+        area.innerHTML = html;
+
+        // 将灯箱图片列表挂到全局变量
+        window.__allLbImgs = allLightboxImages;
+
+        // 懒加载图片
+        area.querySelectorAll('img[data-lazy]').forEach(img => {
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => { if (e.isIntersecting) { img.src = img.dataset.lazy; obs.unobserve(img); } });
+            });
+            obs.observe(img);
+        });
+    }
+
+    function toggleResultGroup(groupId) {
+        document.getElementById(groupId).classList.toggle('collapsed');
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function escapeJsString(str) {
+        return String(str)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r/g, '\\r')
+            .replace(/\n/g, '\\n');
+    }
+
+    function getLatestTaskId() {
+        return Object.entries(taskHistoryCache)
+            .sort((a, b) => (b[1]?.timestamp || 0) - (a[1]?.timestamp || 0))[0]?.[0] || null;
+    }
+
+    function downloadOne(taskId, filename) {
+        const a = document.createElement('a');
+        a.href = `/api/output/${taskId}/${encodeURIComponent(filename)}`;
+        if (licenseKey) a.href += `?license_key=${licenseKey}`;
+        a.download = filename;
+        a.click();
+    }
+
+    async function deleteTask(taskId) {
+        if (!confirm('确定要删除这个任务的所有结果图吗？')) return;
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (licenseKey) headers['X-License-Key'] = licenseKey;
+            const resp = await fetch(`/api/output/task/${taskId}`, {
+                method: 'DELETE', headers
+            });
+            const data = await resp.json();
+            if (data.success) {
+                delete taskHistoryCache[taskId];
+                localStorage.setItem(TASK_CACHE_KEY, JSON.stringify(taskHistoryCache));
+                renderAllCachedHistory();
+            } else {
+                alert(data.error || '删除任务失败');
+            }
+        } catch (e) {
+            alert('删除任务失败，请检查网络');
+        }
+    }
+
+    async function deleteOne(taskId, filename) {
+        if (!confirm('确定要删除这张图片吗？')) return;
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (licenseKey) headers['X-License-Key'] = licenseKey;
+            const resp = await fetch(`/api/output/${taskId}/${encodeURIComponent(filename)}`, {
+                method: 'DELETE', headers
+            });
+            const data = await resp.json();
+            if (data.success) {
+                // 从缓存中移除
+                const cached = taskHistoryCache[taskId];
+                if (cached && cached.files) {
+                    cached.files = cached.files.filter(f => (f.name || f) !== filename);
+                    if (cached.files.length === 0) {
+                        delete taskHistoryCache[taskId];
+                    }
+                    localStorage.setItem(TASK_CACHE_KEY, JSON.stringify(taskHistoryCache));
+                }
+                // 重新渲染
+                renderAllCachedHistory();
+            } else {
+                alert(data.error || '删除失败');
+            }
+        } catch (e) {
+            alert('删除失败，请检查网络');
+        }
+    }
+
+    function downloadAll() {
+        if (!currentTaskId) return;
+        downloadTask(currentTaskId);
+    }
+
+    function downloadTask(taskId) {
+        if (!taskId) return;
+        const a = document.createElement('a');
+        a.href = `/api/download/${taskId}`;
+        if (licenseKey) a.href += `?license_key=${licenseKey}`;
+        a.click();
+    }
+
+    // ====== 工具函数 ======
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    // ====== 灯箱大图预览 ======
+    let lightboxImages = [];  // [{src, name}]
+    let lightboxIndex = 0;
+
+    function openLightbox(images, startIndex) {
+        lightboxImages = images;
+        lightboxIndex = startIndex || 0;
+        updateLightbox();
+        const el = document.getElementById('lightbox');
+        el.style.display = 'flex';
+        requestAnimationFrame(() => el.classList.add('show'));
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        const el = document.getElementById('lightbox');
+        el.classList.remove('show');
+        setTimeout(() => { el.style.display = 'none'; }, 250);
+        document.body.style.overflow = '';
+    }
+
+    function lightboxClose(event) {
+        // 点击遮罩关闭（非图片区域）
+        if (event.target === event.currentTarget) closeLightbox();
+    }
+
+    function updateLightbox() {
+        if (!lightboxImages.length) return;
+        const img = document.getElementById('lightboxImg');
+        const item = lightboxImages[lightboxIndex];
+        img.src = item.src;
+        document.getElementById('lightboxFilename').textContent = item.name || '';
+        document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxImages.length}`;
+    }
+
+    function lightboxPrev(event) {
+        event.stopPropagation();
+        if (lightboxImages.length <= 1) return;
+        lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
+        updateLightbox();
+    }
+
+    function lightboxNext(event) {
+        event.stopPropagation();
+        if (lightboxImages.length <= 1) return;
+        lightboxIndex = (lightboxIndex + 1) % lightboxImages.length;
+        updateLightbox();
+    }
+
+    // 键盘导航
+    document.addEventListener('keydown', e => {
+        const lb = document.getElementById('lightbox');
+        if (lb.style.display !== 'flex') return;
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowLeft') lightboxPrev(e);
+        else if (e.key === 'ArrowRight') lightboxNext(e);
+    });
+
+    // ====== 悬浮胶囊二维码弹出 ======
+    function toggleQrPopup(event) {
+        event.stopPropagation();
+        const popup = document.getElementById('fabQrPopup');
+        popup.classList.toggle('show');
+    }
+    // 点击其他区域关闭二维码弹窗
+    document.addEventListener('click', e => {
+        const popup = document.getElementById('fabQrPopup');
+        const wechat = document.getElementById('fabWechat');
+        if (popup && !wechat.contains(e.target)) {
+            popup.classList.remove('show');
+        }
+    });
     </script>
 </body>
 </html>

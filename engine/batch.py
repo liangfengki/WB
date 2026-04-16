@@ -17,13 +17,15 @@ class BatchProcessor:
         output_path: str = None,
         images_per_product: int = None,
         api_keys: list = None,
+        base_url: str = None,
+        model: str = None,
         progress_callback=None,
         auto_recognize: bool = False,
     ):
         self.background_prompt = background_prompt
-        self.api = SeedreamAPI(api_keys=api_keys)
+        self.api = SeedreamAPI(api_keys=api_keys, base_url=base_url, model=model)
         self.ocr = OCRProcessor()
-        self.recognizer = ProductRecognizer(api_keys=api_keys)
+        self.recognizer = ProductRecognizer(api_keys=api_keys, base_url=base_url, model=model)
         self.failed_files = []
         self.input_path = input_path if input_path is not None else settings.INPUT_DIR
         self.output_path = output_path if output_path is not None else settings.OUTPUT_DIR

@@ -5,3 +5,4 @@ tqdm==4.66.4
 aiofiles==23.2.1
 flask==3.0.3
 gunicorn==22.0.0
+easyocr>=1.7.0
