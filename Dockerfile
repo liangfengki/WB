@@ -19,4 +19,4 @@ ENV PORT=8000
 
 EXPOSE 8000
 
-CMD ["gunicorn", "server:app", "--bind", "0.0.0.0:8000", "--timeout", "600", "--workers", "1", "--graceful-timeout", "600", "--keep-alive", "5"]
+CMD gunicorn server:app --bind 0.0.0.0:${PORT:-8000} --timeout 600 --workers 1 --graceful-timeout 600 --keep-alive 5 --log-level debug --error-logfile - --access-logfile -
