@@ -20,4 +20,4 @@ ENV PORT=8000
 
 EXPOSE 8000
 
-CMD ["/app/start.sh"]
+CMD ["gunicorn", "server:app", "--bind", "0.0.0.0:8080", "--timeout", "600", "--workers", "1", "--threads", "4", "--graceful-timeout", "600", "--keep-alive", "5", "--log-level", "info", "--error-logfile", "-", "--access-logfile", "-"]
