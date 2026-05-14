@@ -981,6 +981,7 @@ def start_process():
 
     elif mode == "underwear_layering":
         # Parse underwear_layering specific parameters
+        generations_per_source = min(max(int(data.get("generations_per_source", 1)), 1), 5)
         user_prompt = data.get("user_prompt", "")
 
         from engine.prompt_builder import PromptBuilder
@@ -1070,7 +1071,7 @@ def start_process():
 
     # Determine xhs_multi kwargs
     _xhs_multi_mode = (mode == "xhs_multi")
-    _generations_per_source = generations_per_source if _xhs_multi_mode else 1
+    _generations_per_source = generations_per_source if mode in ("xhs_multi", "underwear_layering") else 1
     _enable_color_harmonize = enable_color_harmonize if _xhs_multi_mode else True
 
     # Determine user_prompt (shared by xhs_multi and underwear_layering)

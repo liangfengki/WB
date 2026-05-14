@@ -247,25 +247,29 @@ class BatchProcessor:
             logger.error("模特图列表为空，无法进行内衣叠穿模式处理")
             return []
 
-        # 构建配对：每张内衣图 × 每张模特图
+        # 构建配对：每张内衣图 × 每张模特图 × 生成数量
         pairings = []
         for uw_idx, uw_path in enumerate(self.underwear_files):
             uw_name = os.path.splitext(os.path.basename(uw_path))[0]
             for md_idx, md_path in enumerate(self.model_files):
                 md_name = os.path.splitext(os.path.basename(md_path))[0]
-                output_filename = f"{uw_name}_on_{md_name}.jpg"
-                pairings.append({
-                    "underwear_path": uw_path,
-                    "underwear_filename": os.path.basename(uw_path),
-                    "model_path": md_path,
-                    "model_filename": os.path.basename(md_path),
-                    "output_filename": output_filename,
-                })
+                for gen_idx in range(self.generations_per_source):
+                    if self.generations_per_source == 1:
+                        output_filename = f"{uw_name}_on_{md_name}.jpg"
+                    else:
+                        output_filename = f"{uw_name}_on_{md_name}_{gen_idx + 1}.jpg"
+                    pairings.append({
+                        "underwear_path": uw_path,
+                        "underwear_filename": os.path.basename(uw_path),
+                        "model_path": md_path,
+                        "model_filename": os.path.basename(md_path),
+                        "output_filename": output_filename,
+                    })
 
         self.total_tasks = len(pairings)
         self.completed_tasks = 0
 
-        logger.info(f"内衣叠穿模式: {len(self.underwear_files)} 张内衣图 × {len(self.model_files)} 张模特图 = {self.total_tasks} 个任务")
+        logger.info(f"内衣叠穿模式: {len(self.underwear_files)} 张内衣图 × {len(self.model_files)} 张模特图 × {self.generations_per_source} 次生成 = {self.total_tasks} 个任务")
 
         # 并发处理所有配对
         tasks = [self._process_single_underwear_pairing(p) for p in pairings]
