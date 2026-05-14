@@ -1936,7 +1936,7 @@
 
         const formData = new FormData();
         validFiles.forEach(f => formData.append('files', f));
-        if (sessionId) formData.append('session_id', sessionId);
+        formData.append('session_id', sessionId || '');
         formData.append('scope', scope);
 
         try {
@@ -1969,8 +1969,19 @@
         document.getElementById('underwearCount').textContent = `${underwearFiles.length}/20`;
         if (!underwearFiles.length) { list.innerHTML = ''; return; }
         list.innerHTML = underwearFiles.map((f, idx) => {
-            const icon = f.name.match(/\.(mp4|mov)$/i) ? 'bi-file-earmark-play' : 'bi-file-image';
-            return `<div class="file-item"><i class="bi ${icon}"></i><span class="file-name" title="${f.name}">${f.name}</span><button class="file-del-btn" onclick="deleteUnderwearFile(${idx},'underwear')"><i class="bi bi-x"></i></button></div>`;
+            const thumbSrc = authedUrl(f.path);
+            return `
+            <div class="file-item">
+                <img class="file-thumb" src="${thumbSrc}" alt="${escapeHtml(f.name)}" style="width:44px;height:44px" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect fill=%22%23f4f4f5%22 width=%2244%22 height=%2244%22/><text x=%2222%22 y=%2226%22 font-size=%2212%22 fill=%22%23a1a1aa%22 text-anchor=%22middle%22>📷</text></svg>'">
+                <div class="file-info">
+                    <div class="name">${escapeHtml(f.name)}</div>
+                    <div class="size">${formatSize(f.size)}</div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn-icon" title="预览" onclick="previewUnderwear(${idx},'underwear')"><i class="bi bi-eye"></i></button>
+                    <button class="btn-icon" title="删除" onclick="deleteUnderwearFile(${idx},'underwear')"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>`;
         }).join('');
     }
 
@@ -1979,9 +1990,30 @@
         document.getElementById('underwearModelCount').textContent = `${underwearModelFiles.length}/20`;
         if (!underwearModelFiles.length) { list.innerHTML = ''; return; }
         list.innerHTML = underwearModelFiles.map((f, idx) => {
-            const icon = f.name.match(/\.(mp4|mov)$/i) ? 'bi-file-earmark-play' : 'bi-file-image';
-            return `<div class="file-item"><i class="bi ${icon}"></i><span class="file-name" title="${f.name}">${f.name}</span><button class="file-del-btn" onclick="deleteUnderwearFile(${idx},'underwear_model')"><i class="bi bi-x"></i></button></div>`;
+            const thumbSrc = authedUrl(f.path);
+            return `
+            <div class="file-item">
+                <img class="file-thumb" src="${thumbSrc}" alt="${escapeHtml(f.name)}" style="width:44px;height:44px" onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect fill=%22%23f4f4f5%22 width=%2244%22 height=%2244%22/><text x=%2222%22 y=%2226%22 font-size=%2212%22 fill=%22%23a1a1aa%22 text-anchor=%22middle%22>📷</text></svg>'">
+                <div class="file-info">
+                    <div class="name">${escapeHtml(f.name)}</div>
+                    <div class="size">${formatSize(f.size)}</div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn-icon" title="预览" onclick="previewUnderwear(${idx},'underwear_model')"><i class="bi bi-eye"></i></button>
+                    <button class="btn-icon" title="删除" onclick="deleteUnderwearFile(${idx},'underwear_model')"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>`;
         }).join('');
+    }
+
+    function previewUnderwear(idx, scope) {
+        const files = scope === 'underwear' ? underwearFiles : underwearModelFiles;
+        if (!files[idx]) return;
+        const images = files.map(uf => ({
+            src: authedUrl(uf.path),
+            name: uf.name
+        }));
+        openLightbox(images, idx);
     }
 
     async function deleteUnderwearFile(idx, scope) {
