@@ -1273,6 +1273,11 @@
     // ====== 全局状态 ======
     let licenseKey = localStorage.getItem('license_key') || '';
     let sessionId = localStorage.getItem('session_id') || '';
+    // 校验 session_id 格式（必须是 8 位十六进制），不合法则清空
+    if (sessionId && !/^[0-9a-f]{8}$/.test(sessionId)) {
+        sessionId = '';
+        localStorage.removeItem('session_id');
+    }
     let inputDir = localStorage.getItem('input_dir') || '';
     let uploadedFiles = [];
     let currentTaskId = null;
