@@ -935,7 +935,7 @@ def start_process():
     auto_recognize = data.get("auto_recognize", False)
     enable_color_harmonize = data.get("enable_color_harmonize", True)
 
-    if not input_dir or not os.path.exists(input_dir):
+    if mode != "underwear_layering" and (not input_dir or not os.path.exists(input_dir)):
         return jsonify({"error": "输入目录不存在，请先上传文件"}), 400
 
     if mode == "xhs_multi":
