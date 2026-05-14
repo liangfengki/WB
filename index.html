@@ -1945,6 +1945,17 @@
                 headers: { 'X-License-Key': licenseKey },
                 body: formData
             });
+            if (resp.status === 401 || resp.status === 403) {
+                const errData = await resp.json().catch(() => ({}));
+                alert(errData.error || '授权码无效');
+                showLicenseModal();
+                return;
+            }
+            if (!resp.ok) {
+                const errText = await resp.text().catch(() => '');
+                alert(`上传失败 (${resp.status}): ${errText || '服务器错误'}`);
+                return;
+            }
             const data = await resp.json();
             if (data.error) { alert(data.error); return; }
 
@@ -1961,7 +1972,7 @@
                 renderUnderwearModelList();
             }
             updateStartButton();
-        } catch (e) { console.error(e); alert('上传失败'); }
+        } catch (e) { console.error('上传异常:', e); alert('上传失败: ' + e.message); }
     }
 
     function renderUnderwearList() {
