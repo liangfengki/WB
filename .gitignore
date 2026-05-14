@@ -13,3 +13,10 @@ uploads/
 output/
 logs/
 models/
+data/
+node_modules/
+dist/
+.ruff_cache/
+.vercel/
+.kilo/
+.workbuddy/

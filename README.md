@@ -38,3 +38,13 @@ engine/         # 批量处理引擎
 ```bash
 pip3 install -r requirements.txt
 ```
+
+## 部署
+
+生产部署通过 `Procfile` 启动：
+
+```
+web: gunicorn server:app --bind 0.0.0.0:$PORT --timeout 600 --workers 1 --graceful-timeout 600 --keep-alive 5
+```
+
+⚠️ **单 worker 是硬约束，勿改**：`--workers 1` 必须保留。后台管理的会话存储（`admin_sessions`）与登录/通用速率限制计数器都是进程内内存结构，多 worker 下无法跨进程共享，会导致管理员随机被登出、限流计数失真。若将来确有横向扩容需求，必须先把会话与限流迁移到 Redis 等外部存储，再讨论调整 worker 数。

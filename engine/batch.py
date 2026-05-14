@@ -1,6 +1,6 @@
 import os
 import asyncio
-from typing import List
+from typing import List, Tuple
 from config.settings import settings
 from utils.logger import logger
 from processor.image import ImageProcessor
@@ -19,6 +19,12 @@ class BatchProcessor:
         api_keys: list = None,
         progress_callback=None,
         auto_recognize: bool = False,
+        ref_bg_path: str = None,
+        ref_bg_files: list = None,
+        xhs_multi_mode: bool = False,
+        generations_per_source: int = 1,
+        user_prompt: str = "",
+        enable_color_harmonize: bool = True,
     ):
         self.background_prompt = background_prompt
         self.api = SeedreamAPI(api_keys=api_keys)
@@ -33,6 +39,12 @@ class BatchProcessor:
         self.completed_tasks = 0
         self.auto_recognize = auto_recognize
         self.recognition_results = {}
+        self.ref_bg_path = ref_bg_path
+        self.ref_bg_files = ref_bg_files
+        self.xhs_multi_mode = xhs_multi_mode
+        self.generations_per_source = generations_per_source
+        self.user_prompt = user_prompt
+        self.enable_color_harmonize = enable_color_harmonize
         self._semaphore = None
 
     @property
@@ -128,8 +140,103 @@ class BatchProcessor:
             self._report_progress(filename, "failed", str(e))
             return False, filename, []
 
+    async def _process_xhs_multi(self) -> List[Tuple[bool, str, list]]:
+        """XHS 多图模式处理流程"""
+        from engine.pairing import PairingEngine, PairingResult
+        from engine.prompt_builder import PromptBuilder
+
+        source_files = self.get_image_files()
+        if not source_files:
+            logger.warning("没有找到待处理的人物图")
+            return []
+
+        ref_files = self.ref_bg_files or []
+        if not ref_files:
+            logger.error("参考背景图列表为空，无法进行 XHS 多图模式处理")
+            return []
+
+        engine = PairingEngine(
+            source_files=source_files,
+            reference_files=ref_files,
+            generations_per_source=self.generations_per_source,
+        )
+        pairings = engine.generate_pairings()
+        self.total_tasks = len(pairings)
+        self.completed_tasks = 0
+
+        logger.info(f"XHS 多图模式: {len(source_files)} 张人物图 × {self.generations_per_source} 次生成 = {self.total_tasks} 个任务")
+
+        # 并发处理所有配对
+        tasks = [self._process_single_pairing(p) for p in pairings]
+        results = []
+        for future in asyncio.as_completed(tasks):
+            result = await future
+            results.append(result)
+
+        success_count = sum(1 for r in results if r[0])
+        logger.info(f"XHS 多图模式处理完成: 成功 {success_count}/{len(results)}")
+
+        if self.failed_files:
+            logger.info(f"失败文件: {', '.join(self.failed_files)}")
+
+        return results
+
+    async def _process_single_pairing(self, pairing) -> Tuple[bool, str, list]:
+        """处理单个配对任务"""
+        async with self.semaphore:
+            from engine.prompt_builder import PromptBuilder
+
+            output_filename = pairing.output_filename
+            try:
+                logger.info(f"开始处理配对: {pairing.source_filename} + {pairing.reference_filename} -> {output_filename}")
+                self._report_progress(pairing.source_filename, "processing", f"配对处理: {pairing.reference_filename}")
+
+                # 加载源图和参考图
+                source_img = ImageProcessor.preprocess_image(pairing.source_path)
+                ref_img = ImageProcessor.preprocess_image(pairing.reference_path)
+
+                # 色彩和谐化：将人物色调向参考背景靠拢
+                if self.enable_color_harmonize and settings.ENABLE_COLOR_HARMONIZE:
+                    source_img = ImageProcessor.harmonize_color(
+                        source_img, ref_img,
+                        strength=settings.COLOR_HARMONIZE_STRENGTH,
+                    )
+
+                # 构建提示词
+                prompt = PromptBuilder.build_xhs_multi_prompt(
+                    user_prompt=self.user_prompt,
+                    scene_keywords=[],
+                )
+
+                # 调用 API: Source_Image 作为第一张图, Reference_Image 作为第二张图
+                generated_images = await self.api.generate_image(
+                    source_img, prompt, ref_bg_image=ref_img
+                )
+
+                # 保存输出
+                output_file_path = os.path.join(self.output_path, output_filename)
+                ImageProcessor.save_image(generated_images[0], output_file_path)
+
+                self.completed_tasks += 1
+                logger.info(f"配对处理完成: {output_filename}")
+                self._report_progress(pairing.source_filename, "completed", f"生成: {output_filename}")
+                return (True, pairing.source_filename, [output_filename])
+
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                self.completed_tasks += 1
+                logger.error(f"配对处理失败 {pairing.source_filename} + {pairing.reference_filename}: {str(e)}\n{error_details}")
+                self.failed_files.append(output_filename)
+                self._report_progress(pairing.source_filename, "failed", str(e))
+                return (False, pairing.source_filename, [])
+
     async def process_all(self):
         os.makedirs(self.output_path, exist_ok=True)
+
+        # XHS 多图模式分发
+        if self.xhs_multi_mode:
+            return await self._process_xhs_multi()
 
         image_files = self.get_image_files()
         logger.info(f"发现 {len(image_files)} 张待处理图片")

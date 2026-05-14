@@ -29,11 +29,12 @@ class SeedreamAPI:
         return self._semaphore
 
     async def generate_image(
-        self, reference_image: Image.Image, prompt: str, n: int = 1
+        self, reference_image: Image.Image, prompt: str, n: int = 1,
+        ref_bg_image: Image.Image = None
     ) -> list:
         async with self.semaphore:
             last_exception = None
-            
+
             for attempt in range(settings.MAX_RETRIES):
                 current_key = next(self.key_cycle)
                 try:
@@ -41,15 +42,23 @@ class SeedreamAPI:
                     reference_image.save(buffered, format="JPEG", quality=90)
                     img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
+                    content = [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"}}
+                    ]
+
+                    if ref_bg_image is not None:
+                        bg_buffered = BytesIO()
+                        ref_bg_image.save(bg_buffered, format="JPEG", quality=90)
+                        bg_base64 = base64.b64encode(bg_buffered.getvalue()).decode()
+                        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{bg_base64}"}})
+
                     payload = {
                         "model": self.model,
                         "messages": [
                             {
                                 "role": "user",
-                                "content": [
-                                    {"type": "text", "text": prompt},
-                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"}}
-                                ]
+                                "content": content
                             }
                         ]
                     }
