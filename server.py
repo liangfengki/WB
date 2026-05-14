@@ -450,7 +450,7 @@ def progress_callback(task_id, filename, status, completed, total, detail):
             tasks_store[task_id]["log"] = tasks_store[task_id]["log"][-200:]
 
 
-def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, ref_bg_path=None, xhs_multi_mode=False, generations_per_source=1, user_prompt="", enable_color_harmonize=True):
+def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, ref_bg_path=None, xhs_multi_mode=False, generations_per_source=1, user_prompt="", enable_color_harmonize=True, underwear_layering_mode=False, underwear_files=None, model_files=None):
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -478,6 +478,9 @@ def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api
             ref_bg_path=ref_bg_path,
             ref_bg_files=ref_bg_files,
             xhs_multi_mode=xhs_multi_mode,
+            underwear_layering_mode=underwear_layering_mode,
+            underwear_files=underwear_files,
+            model_files=model_files,
             generations_per_source=generations_per_source,
             user_prompt=user_prompt,
             enable_color_harmonize=enable_color_harmonize,
@@ -507,6 +510,18 @@ def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api
 
         # Store pairings info for xhs_multi mode
         if xhs_multi_mode and results:
+            pairings_info = []
+            for success, source_filename, output_filenames in results:
+                for out_file in output_filenames:
+                    pairings_info.append({
+                        "source": source_filename,
+                        "output": out_file,
+                        "status": "completed" if success else "failed",
+                    })
+            tasks_store[task_id]["pairings"] = pairings_info
+
+        # Store pairings info for underwear_layering mode
+        if underwear_layering_mode and results:
             pairings_info = []
             for success, source_filename, output_filenames in results:
                 for out_file in output_filenames:
@@ -710,7 +725,7 @@ def delete_uploaded_file(session_id, filename, scope=None):
     if not _validate_session_id(session_id):
         return jsonify({"error": "无效的会话ID"}), 400
 
-    if scope and scope not in {"xhs_source"}:
+    if scope and scope not in {"xhs_source", "underwear", "underwear_model"}:
         return jsonify({"error": "无效的 scope"}), 400
 
     safe_name = _sanitize_path(filename)
@@ -753,7 +768,7 @@ def upload_preview():
 
     # scope 用于隔离不同模式的上传目录；默认 wb 落顶层，xhs 人物图落子目录
     scope = request.form.get("scope", "").strip()
-    if scope and scope not in {"xhs_source"}:
+    if scope and scope not in {"xhs_source", "underwear", "underwear_model"}:
         return jsonify({"error": "无效的 scope"}), 400
 
     session_root = os.path.join(UPLOAD_DIR, session_id)
@@ -866,7 +881,7 @@ def preview_image(session_id, filename, scope=None):
     if not _validate_session_id(session_id):
         return jsonify({"error": "无效的会话ID"}), 400
 
-    if scope and scope not in {"xhs_source"}:
+    if scope and scope not in {"xhs_source", "underwear", "underwear_model"}:
         return jsonify({"error": "无效的 scope"}), 400
 
     safe_name = _sanitize_path(filename)
@@ -896,7 +911,7 @@ def start_process():
     images_per_product = int(data.get("images_per_product", 3))
     mode = data.get("mode", "wb")
 
-    ALLOWED_MODES = {"wb", "xhs_multi"}
+    ALLOWED_MODES = {"wb", "xhs_multi", "underwear_layering"}
     if mode not in ALLOWED_MODES:
         return jsonify({"error": f"不支持的 mode: {mode}"}), 400
 
@@ -910,6 +925,11 @@ def start_process():
 
     if not api_keys:
         return jsonify({"error": "请提供 API Key"}), 400
+
+    # Default values for mode-specific parameters
+    user_prompt = ""
+    prompt_truncated = False
+    generations_per_source = 1
 
     output_name = data.get("output_name", datetime.now().strftime("output_%Y%m%d_%H%M%S"))
     auto_recognize = data.get("auto_recognize", False)
@@ -959,6 +979,56 @@ def start_process():
         prompt = "xhs_multi_mode"
         images_per_product = 1
 
+    elif mode == "underwear_layering":
+        # Parse underwear_layering specific parameters
+        user_prompt = data.get("user_prompt", "")
+
+        from engine.prompt_builder import PromptBuilder
+        user_prompt, prompt_truncated = PromptBuilder.truncate_user_prompt(user_prompt)
+
+        # Validate underwear and model directories
+        underwear_dir = data.get("underwear_dir", "")
+        model_dir = data.get("model_dir", "")
+
+        if not underwear_dir or not os.path.exists(underwear_dir):
+            return jsonify({"error": "内衣图目录不存在，请先上传内衣图"}), 400
+        if not model_dir or not os.path.exists(model_dir):
+            return jsonify({"error": "模特图目录不存在，请先上传模特图"}), 400
+
+        valid_extensions = (".png", ".jpg", ".jpeg", ".webp")
+        uw_files = [f for f in os.listdir(underwear_dir) if f.lower().endswith(valid_extensions) and os.path.isfile(os.path.join(underwear_dir, f))]
+        md_files = [f for f in os.listdir(model_dir) if f.lower().endswith(valid_extensions) and os.path.isfile(os.path.join(model_dir, f))]
+
+        if not uw_files:
+            return jsonify({"error": "内衣图目录中没有有效的图片文件"}), 400
+        if not md_files:
+            return jsonify({"error": "模特图目录中没有有效的图片文件"}), 400
+
+        # Validate counts
+        if len(uw_files) > 20:
+            return jsonify({"error": "内衣图数量超出限制（最多20张）"}), 400
+        if len(md_files) > 20:
+            return jsonify({"error": "模特图数量超出限制（最多20张）"}), 400
+
+        # Validate file sizes
+        max_file_size = 20 * 1024 * 1024
+        for f in uw_files:
+            fp = os.path.join(underwear_dir, f)
+            if os.path.getsize(fp) > max_file_size:
+                return jsonify({"error": f"内衣图 {f} 大小超出限制（最大20MB）"}), 400
+        for f in md_files:
+            fp = os.path.join(model_dir, f)
+            if os.path.getsize(fp) > max_file_size:
+                return jsonify({"error": f"模特图 {f} 大小超出限制（最大20MB）"}), 400
+
+        prompt = "underwear_layering_mode"
+        images_per_product = 1
+
+        # Build file lists now while underwear_dir/model_dir are in scope
+        _underwear_layering_mode = True
+        _underwear_files = [os.path.join(underwear_dir, f) for f in sorted(os.listdir(underwear_dir)) if f.lower().endswith(valid_extensions)]
+        _model_files = [os.path.join(model_dir, f) for f in sorted(os.listdir(model_dir)) if f.lower().endswith(valid_extensions)]
+
     else:
         if not prompt.strip() and not auto_recognize:
             return jsonify({"error": "请输入场景描述或开启自动识别"}), 400
@@ -985,24 +1055,37 @@ def start_process():
         task_entry["user_prompt"] = user_prompt
         task_entry["prompt_truncated"] = prompt_truncated
 
+    # Store underwear_layering specific fields
+    if mode == "underwear_layering":
+        task_entry["user_prompt"] = user_prompt
+        task_entry["prompt_truncated"] = prompt_truncated
+
     tasks_store[task_id] = task_entry
 
     # Determine ref_bg_path for process_task
     if mode == "xhs_multi":
         _ref_bg_path = ref_bg_dir
-    else:  # wb
+    else:  # wb, underwear_layering
         _ref_bg_path = None
 
     # Determine xhs_multi kwargs
     _xhs_multi_mode = (mode == "xhs_multi")
     _generations_per_source = generations_per_source if _xhs_multi_mode else 1
-    _user_prompt = user_prompt if _xhs_multi_mode else ""
     _enable_color_harmonize = enable_color_harmonize if _xhs_multi_mode else True
+
+    # Determine user_prompt (shared by xhs_multi and underwear_layering)
+    _user_prompt = user_prompt if mode in ("xhs_multi", "underwear_layering") else ""
+
+    # Determine underwear_layering kwargs (already set if mode == "underwear_layering")
+    if mode != "underwear_layering":
+        _underwear_layering_mode = False
+        _underwear_files = None
+        _model_files = None
 
     # Vercel 环境同步处理，否则异步线程
     if os.getenv("VERCEL") == "1" or os.getenv("AWS_EXECUTION_ENV"):
         try:
-            process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize)
+            process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files)
             return jsonify({
                 "task_id": task_id,
                 "status": tasks_store[task_id]["status"],
@@ -1015,7 +1098,7 @@ def start_process():
     else:
         thread = threading.Thread(
             target=process_task,
-            args=(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize),
+            args=(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files),
             daemon=True,
         )
         thread.start()
@@ -1049,6 +1132,11 @@ def get_task_status(task_id):
     if task.get("mode") == "xhs_multi":
         response_data["pairings"] = task.get("pairings", [])
         response_data["generations_per_source"] = task.get("generations_per_source", 1)
+        response_data["prompt_truncated"] = task.get("prompt_truncated", False)
+
+    # Include underwear_layering specific fields if present
+    if task.get("mode") == "underwear_layering":
+        response_data["pairings"] = task.get("pairings", [])
         response_data["prompt_truncated"] = task.get("prompt_truncated", False)
 
     return jsonify(response_data)

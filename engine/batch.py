@@ -22,6 +22,9 @@ class BatchProcessor:
         ref_bg_path: str = None,
         ref_bg_files: list = None,
         xhs_multi_mode: bool = False,
+        underwear_layering_mode: bool = False,
+        underwear_files: list = None,
+        model_files: list = None,
         generations_per_source: int = 1,
         user_prompt: str = "",
         enable_color_harmonize: bool = True,
@@ -42,6 +45,9 @@ class BatchProcessor:
         self.ref_bg_path = ref_bg_path
         self.ref_bg_files = ref_bg_files
         self.xhs_multi_mode = xhs_multi_mode
+        self.underwear_layering_mode = underwear_layering_mode
+        self.underwear_files = underwear_files or []
+        self.model_files = model_files or []
         self.generations_per_source = generations_per_source
         self.user_prompt = user_prompt
         self.enable_color_harmonize = enable_color_harmonize
@@ -231,8 +237,100 @@ class BatchProcessor:
                 self._report_progress(pairing.source_filename, "failed", str(e))
                 return (False, pairing.source_filename, [])
 
+    async def _process_underwear_layering(self) -> List[Tuple[bool, str, list]]:
+        """内衣叠穿模式处理流程：将内衣图叠穿到模特图上"""
+        if not self.underwear_files:
+            logger.error("内衣图列表为空，无法进行内衣叠穿模式处理")
+            return []
+
+        if not self.model_files:
+            logger.error("模特图列表为空，无法进行内衣叠穿模式处理")
+            return []
+
+        # 构建配对：每张内衣图 × 每张模特图
+        pairings = []
+        for uw_idx, uw_path in enumerate(self.underwear_files):
+            uw_name = os.path.splitext(os.path.basename(uw_path))[0]
+            for md_idx, md_path in enumerate(self.model_files):
+                md_name = os.path.splitext(os.path.basename(md_path))[0]
+                output_filename = f"{uw_name}_on_{md_name}.jpg"
+                pairings.append({
+                    "underwear_path": uw_path,
+                    "underwear_filename": os.path.basename(uw_path),
+                    "model_path": md_path,
+                    "model_filename": os.path.basename(md_path),
+                    "output_filename": output_filename,
+                })
+
+        self.total_tasks = len(pairings)
+        self.completed_tasks = 0
+
+        logger.info(f"内衣叠穿模式: {len(self.underwear_files)} 张内衣图 × {len(self.model_files)} 张模特图 = {self.total_tasks} 个任务")
+
+        # 并发处理所有配对
+        tasks = [self._process_single_underwear_pairing(p) for p in pairings]
+        results = []
+        for future in asyncio.as_completed(tasks):
+            result = await future
+            results.append(result)
+
+        success_count = sum(1 for r in results if r[0])
+        logger.info(f"内衣叠穿模式处理完成: 成功 {success_count}/{len(results)}")
+
+        if self.failed_files:
+            logger.info(f"失败文件: {', '.join(self.failed_files)}")
+
+        return results
+
+    async def _process_single_underwear_pairing(self, pairing: dict) -> Tuple[bool, str, list]:
+        """处理单个内衣叠穿配对任务"""
+        async with self.semaphore:
+            output_filename = pairing["output_filename"]
+            try:
+                logger.info(f"开始内衣叠穿: {pairing['underwear_filename']} + {pairing['model_filename']} -> {output_filename}")
+                self._report_progress(
+                    pairing["underwear_filename"], "processing",
+                    f"叠穿处理: {pairing['model_filename']}"
+                )
+
+                # 加载内衣图和模特图
+                underwear_img = ImageProcessor.preprocess_image(pairing["underwear_path"])
+                model_img = ImageProcessor.preprocess_image(pairing["model_path"])
+
+                # 构建提示词（内衣图作为第一张，模特图作为第二张）
+                prompt = settings.UNDERWEAR_LAYERING_PROMPT_TEMPLATE.format(
+                    user_prompt=self.user_prompt,
+                )
+
+                # 调用 API: 内衣图作为 reference_image, 模特图作为 ref_bg_image
+                generated_images = await self.api.generate_image(
+                    underwear_img, prompt, ref_bg_image=model_img
+                )
+
+                # 保存输出
+                output_file_path = os.path.join(self.output_path, output_filename)
+                ImageProcessor.save_image(generated_images[0], output_file_path)
+
+                self.completed_tasks += 1
+                logger.info(f"内衣叠穿完成: {output_filename}")
+                self._report_progress(pairing["underwear_filename"], "completed", f"生成: {output_filename}")
+                return (True, pairing["underwear_filename"], [output_filename])
+
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                self.completed_tasks += 1
+                logger.error(f"内衣叠穿失败 {pairing['underwear_filename']} + {pairing['model_filename']}: {str(e)}\n{error_details}")
+                self.failed_files.append(output_filename)
+                self._report_progress(pairing["underwear_filename"], "failed", str(e))
+                return (False, pairing["underwear_filename"], [])
+
     async def process_all(self):
         os.makedirs(self.output_path, exist_ok=True)
+
+        # 内衣叠穿模式分发
+        if self.underwear_layering_mode:
+            return await self._process_underwear_layering()
 
         # XHS 多图模式分发
         if self.xhs_multi_mode:

@@ -725,6 +725,7 @@
             <nav class="mode-tab" role="tablist" aria-label="模式切换">
                 <button class="mode-tab__item active" id="modeWb" role="tab" data-mode="wb" onclick="switchMode('wb')">WB 换图</button>
                 <button class="mode-tab__item" id="modeXhsMulti" role="tab" data-mode="xhs_multi" onclick="switchMode('xhs_multi')">小红书换图</button>
+                <button class="mode-tab__item" id="modeUnderwear" role="tab" data-mode="underwear_layering" onclick="switchMode('underwear_layering')">内衣叠穿</button>
             </nav>
             <div class="d-flex align-items-center gap-2">
                 <span class="lang-switch active" data-lang="zh" onclick="setLang('zh')">中</span>
@@ -858,6 +859,57 @@
                                     <span id="xhsMultiPromptCounter" style="font-size:12px;color:var(--text-muted);font-weight:400">0/500</span>
                                 </label>
                                 <textarea id="xhsMultiPrompt" class="form-control" rows="2" style="border-radius:12px;font-size:14px;margin-top:6px" placeholder="描述你想要的风格效果..." maxlength="500" oninput="updateXhsMultiPromptCounter()"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 内衣叠穿面板 -->
+                    <div id="underwearPanel" style="display:none">
+                        <div class="app-card mb-3" id="underwearCard">
+                            <div class="card-title">
+                                <i class="bi bi-layers"></i>
+                                <span>内衣叠穿模式</span>
+                            </div>
+                            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+                                上传内衣图（人台图/模特穿着图/白底图）和模特图（低胸装/U领等），AI将内衣精准叠穿到模特身上，保留所有细节。
+                            </p>
+                            <div class="row g-3">
+                                <!-- 左侧：内衣图上传 -->
+                                <div class="col-12 col-md-6">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+                                        内衣图
+                                        <span class="badge-count" id="underwearCount">0/20</span>
+                                    </div>
+                                    <div class="upload-zone" id="underwearZone">
+                                        <div class="upload-icon"><i class="bi bi-person-standing-dress"></i></div>
+                                        <h3>拖拽内衣图到此处</h3>
+                                        <p>人台图/模特穿着图/白底图，最多20张</p>
+                                        <input type="file" id="underwearInput" multiple accept=".jpg,.jpeg,.png,.webp">
+                                    </div>
+                                    <div class="file-list" id="underwearList"></div>
+                                </div>
+                                <!-- 右侧：模特图上传 -->
+                                <div class="col-12 col-md-6">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+                                        模特图
+                                        <span class="badge-count" id="underwearModelCount">0/20</span>
+                                    </div>
+                                    <div class="upload-zone" id="underwearModelZone">
+                                        <div class="upload-icon"><i class="bi bi-person-arms-up"></i></div>
+                                        <h3>拖拽模特图到此处</h3>
+                                        <p>低胸装/U领等，最多20张</p>
+                                        <input type="file" id="underwearModelInput" multiple accept=".jpg,.jpeg,.png,.webp">
+                                    </div>
+                                    <div class="file-list" id="underwearModelList"></div>
+                                </div>
+                            </div>
+                            <!-- 自定义提示词 -->
+                            <div class="mt-3">
+                                <label style="font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between">
+                                    <span>补充提示词（可选）</span>
+                                    <span id="underwearPromptCounter" style="font-size:12px;color:var(--text-muted);font-weight:400">0/500</span>
+                                </label>
+                                <textarea id="underwearPrompt" class="form-control" rows="2" style="border-radius:12px;font-size:14px;margin-top:6px" placeholder="描述你想要的叠穿效果细节..." maxlength="500" oninput="updateUnderwearPromptCounter()"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1229,7 +1281,7 @@
     let pollTimer = null;
     let proxySites = []; // 中转站列表缓存
     let apiConnected = false; // API 连接状态
-    const VALID_MODES = ['wb', 'xhs_multi'];
+    const VALID_MODES = ['wb', 'xhs_multi', 'underwear_layering'];
     function restoreMode() {
         const raw = localStorage.getItem('mode');
         const mode = VALID_MODES.includes(raw) ? raw : 'wb';
@@ -1242,6 +1294,11 @@
     let xhsMultiRefFiles = [];
     let xhsMultiInputDir = '';
     let xhsMultiRefDir = '';
+    // Underwear layering mode state
+    let underwearFiles = [];
+    let underwearModelFiles = [];
+    let underwearDir = '';
+    let underwearModelDir = '';
     // 历史任务缓存（localStorage 持久化）
     const TASK_CACHE_KEY = 'varia_task_history';
     let taskHistoryCache = JSON.parse(localStorage.getItem(TASK_CACHE_KEY) || '{}');
@@ -1254,6 +1311,7 @@
         updateStartButton();
         setupUpload();
         setupXhsMultiUpload();
+        setupUnderwearUpload();
         restoreApiConfig();
         switchMode(currentMode);
         if (licenseKey) {
@@ -1582,14 +1640,18 @@
         // Header Mode_Tab active 状态
         const btnWb = document.getElementById('modeWb');
         const btnXhsMulti = document.getElementById('modeXhsMulti');
+        const btnUnderwear = document.getElementById('modeUnderwear');
         if (btnWb) btnWb.classList.toggle('active', mode === 'wb');
         if (btnXhsMulti) btnXhsMulti.classList.toggle('active', mode === 'xhs_multi');
+        if (btnUnderwear) btnUnderwear.classList.toggle('active', mode === 'underwear_layering');
 
-        // 面板可见性（wbPanel / xhsPanel 互斥）
+        // 面板可见性（三个面板互斥）
         const wbPanel = document.getElementById('wbPanel');
         const xhsPanel = document.getElementById('xhsPanel');
+        const underwearPanel = document.getElementById('underwearPanel');
         if (wbPanel) wbPanel.style.display = mode === 'wb' ? 'block' : 'none';
         if (xhsPanel) xhsPanel.style.display = mode === 'xhs_multi' ? 'block' : 'none';
+        if (underwearPanel) underwearPanel.style.display = mode === 'underwear_layering' ? 'block' : 'none';
 
         // xhsMultiCard 容器（在 xhsPanel 内）仅在 xhs_multi 显示
         const xhsMultiCard = document.getElementById('xhsMultiCard');
@@ -1603,7 +1665,7 @@
         const fabSelectWrap = document.getElementById('fabSelectWrap');
         if (fabSelectWrap) fabSelectWrap.style.display = mode === 'wb' ? 'block' : 'none';
 
-        // FAB Generation_Count 默认值（wb=3, xhs_multi=1），统一由本函数负责
+        // FAB Generation_Count 默认值（wb=3, 其他=1），统一由本函数负责
         const genSelect = document.getElementById('xhsMultiGenCount');
         if (genSelect) genSelect.value = mode === 'wb' ? '3' : '1';
 
@@ -1842,6 +1904,110 @@
     function updateXhsMultiPromptCounter() {
         const textarea = document.getElementById('xhsMultiPrompt');
         const counter = document.getElementById('xhsMultiPromptCounter');
+        const len = textarea.value.length;
+        counter.textContent = `${len}/500`;
+        counter.style.color = len >= 500 ? 'var(--danger)' : 'var(--text-muted)';
+    }
+
+    // ====== 内衣叠穿模式上传 ======
+    function setupUnderwearUpload() {
+        const uwZone = document.getElementById('underwearZone');
+        const uwInput = document.getElementById('underwearInput');
+        const mdZone = document.getElementById('underwearModelZone');
+        const mdInput = document.getElementById('underwearModelInput');
+
+        uwZone.addEventListener('dragover', e => { e.preventDefault(); uwZone.classList.add('dragover'); });
+        uwZone.addEventListener('dragleave', () => uwZone.classList.remove('dragover'));
+        uwZone.addEventListener('drop', e => { e.preventDefault(); uwZone.classList.remove('dragover'); handleUnderwearFiles(e.dataTransfer.files, 'underwear'); });
+        uwInput.addEventListener('change', e => handleUnderwearFiles(e.target.files, 'underwear'));
+
+        mdZone.addEventListener('dragover', e => { e.preventDefault(); mdZone.classList.add('dragover'); });
+        mdZone.addEventListener('dragleave', () => mdZone.classList.remove('dragover'));
+        mdZone.addEventListener('drop', e => { e.preventDefault(); mdZone.classList.remove('dragover'); handleUnderwearFiles(e.dataTransfer.files, 'underwear_model'); });
+        mdInput.addEventListener('change', e => handleUnderwearFiles(e.target.files, 'underwear_model'));
+    }
+
+    async function handleUnderwearFiles(files, scope) {
+        if (!licenseKey) { showLicenseModal(); return; }
+        const maxCount = 20;
+        const existingFiles = scope === 'underwear' ? underwearFiles : underwearModelFiles;
+        const validFiles = validateImageFiles(files, existingFiles.length, maxCount, scope === 'underwear' ? '内衣图' : '模特图');
+        if (!validFiles.length) return;
+
+        const formData = new FormData();
+        validFiles.forEach(f => formData.append('files', f));
+        if (sessionId) formData.append('session_id', sessionId);
+        formData.append('scope', scope);
+
+        try {
+            const resp = await fetch('/api/upload-preview', {
+                method: 'POST',
+                headers: { 'X-License-Key': licenseKey },
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.error) { alert(data.error); return; }
+
+            sessionId = data.session_id;
+            localStorage.setItem('session_id', sessionId);
+
+            if (scope === 'underwear') {
+                underwearDir = data.input_dir;
+                underwearFiles = data.files;
+                renderUnderwearList();
+            } else {
+                underwearModelDir = data.input_dir;
+                underwearModelFiles = data.files;
+                renderUnderwearModelList();
+            }
+            updateStartButton();
+        } catch (e) { console.error(e); alert('上传失败'); }
+    }
+
+    function renderUnderwearList() {
+        const list = document.getElementById('underwearList');
+        document.getElementById('underwearCount').textContent = `${underwearFiles.length}/20`;
+        if (!underwearFiles.length) { list.innerHTML = ''; return; }
+        list.innerHTML = underwearFiles.map((f, idx) => {
+            const icon = f.name.match(/\.(mp4|mov)$/i) ? 'bi-file-earmark-play' : 'bi-file-image';
+            return `<div class="file-item"><i class="bi ${icon}"></i><span class="file-name" title="${f.name}">${f.name}</span><button class="file-del-btn" onclick="deleteUnderwearFile(${idx},'underwear')"><i class="bi bi-x"></i></button></div>`;
+        }).join('');
+    }
+
+    function renderUnderwearModelList() {
+        const list = document.getElementById('underwearModelList');
+        document.getElementById('underwearModelCount').textContent = `${underwearModelFiles.length}/20`;
+        if (!underwearModelFiles.length) { list.innerHTML = ''; return; }
+        list.innerHTML = underwearModelFiles.map((f, idx) => {
+            const icon = f.name.match(/\.(mp4|mov)$/i) ? 'bi-file-earmark-play' : 'bi-file-image';
+            return `<div class="file-item"><i class="bi ${icon}"></i><span class="file-name" title="${f.name}">${f.name}</span><button class="file-del-btn" onclick="deleteUnderwearFile(${idx},'underwear_model')"><i class="bi bi-x"></i></button></div>`;
+        }).join('');
+    }
+
+    async function deleteUnderwearFile(idx, scope) {
+        const files = scope === 'underwear' ? underwearFiles : underwearModelFiles;
+        const f = files[idx];
+        try {
+            const resp = await fetch(`/api/upload/${sessionId}/${scope}/${f.name}`, {
+                method: 'DELETE',
+                headers: { 'X-License-Key': licenseKey }
+            });
+            const data = await resp.json();
+            if (data.error) { alert(data.error); return; }
+            if (scope === 'underwear') {
+                underwearFiles = underwearFiles.filter((_, i) => i !== idx);
+                renderUnderwearList();
+            } else {
+                underwearModelFiles = underwearModelFiles.filter((_, i) => i !== idx);
+                renderUnderwearModelList();
+            }
+            updateStartButton();
+        } catch (e) { console.error(e); }
+    }
+
+    function updateUnderwearPromptCounter() {
+        const textarea = document.getElementById('underwearPrompt');
+        const counter = document.getElementById('underwearPromptCounter');
         const len = textarea.value.length;
         counter.textContent = `${len}/500`;
         counter.style.color = len >= 500 ? 'var(--danger)' : 'var(--text-muted)';
@@ -2101,11 +2267,15 @@
         let canStart = licenseKey && uploadedFiles.length > 0 && apiKey && baseUrl;
         if (currentMode === 'xhs_multi') {
             canStart = licenseKey && xhsMultiSourceFiles.length > 0 && xhsMultiRefFiles.length > 0 && apiKey && baseUrl;
+        } else if (currentMode === 'underwear_layering') {
+            canStart = licenseKey && underwearFiles.length > 0 && underwearModelFiles.length > 0 && apiKey && baseUrl;
         }
         btn.disabled = !canStart;
         // 更新悬浮胶囊上的文件数量徽章
         const badge = document.getElementById('fabCountBadge');
-        const fileCountForBadge = currentMode === 'xhs_multi' ? xhsMultiSourceFiles.length : uploadedFiles.length;
+        let fileCountForBadge = uploadedFiles.length;
+        if (currentMode === 'xhs_multi') fileCountForBadge = xhsMultiSourceFiles.length;
+        if (currentMode === 'underwear_layering') fileCountForBadge = underwearFiles.length;
         if (fileCountForBadge > 0) {
             badge.textContent = fileCountForBadge;
             badge.style.display = 'inline';
@@ -2119,6 +2289,9 @@
         if (currentMode === 'xhs_multi') {
             if (!xhsMultiSourceFiles.length) { alert('请先上传人物图'); return; }
             if (!xhsMultiRefFiles.length) { alert('请先上传参考背景图'); return; }
+        } else if (currentMode === 'underwear_layering') {
+            if (!underwearFiles.length) { alert('请先上传内衣图'); return; }
+            if (!underwearModelFiles.length) { alert('请先上传模特图'); return; }
         } else {
             if (!uploadedFiles.length) { alert(t('upload_first')); return; }
         }
@@ -2148,6 +2321,17 @@
                 generations_per_source: generationsPerSource,
                 user_prompt: userPrompt,
                 enable_color_harmonize: document.getElementById('enableColorHarmonize').checked,
+                api_key: apiKey,
+                base_url: baseUrl,
+                model: model,
+            };
+        } else if (currentMode === 'underwear_layering') {
+            const userPrompt = document.getElementById('underwearPrompt').value.trim();
+            requestBody = {
+                mode: 'underwear_layering',
+                underwear_dir: underwearDir,
+                model_dir: underwearModelDir,
+                user_prompt: userPrompt,
                 api_key: apiKey,
                 base_url: baseUrl,
                 model: model,
