@@ -50,25 +50,32 @@ class ImageProcessor:
         ref_mean = ref_lab.reshape(-1, 3).mean(axis=0)
         ref_std = ref_lab.reshape(-1, 3).std(axis=0) + 1e-6
 
-        # Reinhard 迁移
-        result_lab = (src_lab - src_mean) * (ref_std / src_std) + ref_mean
+        # Reinhard 迁移（限制 A/B 通道 std 比率，防止白色区域色块放大）
+        ratio = ref_std / src_std
+        ratio[1] = min(ratio[1], 3.0)  # A 通道上限 3x
+        ratio[2] = min(ratio[2], 3.0)  # B 通道上限 3x
+        result_lab = (src_lab - src_mean) * ratio + ref_mean
 
-        # L 通道保留更多原始值（只迁移 30% 的亮度变化），A/B 全量迁移
+        # L 通道保留更多原始值（只迁移 30% 的亮度变化），A/B 按 strength 迁移
         l_strength = strength * 0.3
         ab_strength = strength
         result_lab[:, :, 0] = src_lab[:, :, 0] * (1 - l_strength) + result_lab[:, :, 0] * l_strength
         result_lab[:, :, 1] = src_lab[:, :, 1] * (1 - ab_strength) + result_lab[:, :, 1] * ab_strength
         result_lab[:, :, 2] = src_lab[:, :, 2] * (1 - ab_strength) + result_lab[:, :, 2] * ab_strength
 
+        # 软裁剪 A/B 通道，接近边界时平滑压缩避免硬色块
+        for ch in [1, 2]:
+            ch_data = result_lab[:, :, ch]
+            ch_data = np.where(ch_data > 240, 240 + (ch_data - 240) * 0.3, ch_data)
+            ch_data = np.where(ch_data < 16, 16 - (16 - ch_data) * 0.3, ch_data)
+            result_lab[:, :, ch] = ch_data
+
         result_lab = np.clip(result_lab, 0, 255).astype(np.uint8)
 
         try:
-            result_img = Image.fromarray(result_lab, mode="LAB").convert("RGB")
+            return Image.fromarray(result_lab, mode="LAB").convert("RGB")
         except Exception:
-            result_img = _lab_to_rgb(result_lab)
-
-        # 最终与原图混合
-        return Image.blend(source_img, result_img, strength)
+            return _lab_to_rgb(result_lab)
 
 
 def _srgb_to_linear(c: np.ndarray) -> np.ndarray:
