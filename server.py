@@ -450,7 +450,7 @@ def progress_callback(task_id, filename, status, completed, total, detail):
             tasks_store[task_id]["log"] = tasks_store[task_id]["log"][-200:]
 
 
-def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, ref_bg_path=None, xhs_multi_mode=False, generations_per_source=1, user_prompt="", enable_color_harmonize=True, underwear_layering_mode=False, underwear_files=None, model_files=None):
+def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, ref_bg_path=None, xhs_multi_mode=False, generations_per_source=1, user_prompt="", enable_color_harmonize=True, underwear_layering_mode=False, underwear_files=None, model_files=None, layering_style="lace_full", material="lace", opacity=30, auto_mode=False, xhs_style="", xhs_view="", xhs_action=""):
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -484,6 +484,13 @@ def process_task(task_id, input_dir, output_dir, prompt, images_per_product, api
             generations_per_source=generations_per_source,
             user_prompt=user_prompt,
             enable_color_harmonize=enable_color_harmonize,
+            layering_style=layering_style,
+            material=material,
+            opacity=opacity,
+            auto_mode=auto_mode,
+            xhs_style=xhs_style,
+            xhs_view=xhs_view,
+            xhs_action=xhs_action,
         )
 
         try:
@@ -578,6 +585,32 @@ def admin_page():
 def get_scenes():
     """获取预设场景列表"""
     return jsonify({"scenes": settings.SCENE_PRESETS})
+
+
+@app.route("/api/layering-presets", methods=["GET"])
+def get_layering_presets():
+    """获取内衣叠穿风格预设列表"""
+    return jsonify({"presets": settings.LAYERING_STYLE_PRESETS})
+
+@app.route("/api/material-presets", methods=["GET"])
+def get_material_presets():
+    """获取内衣材质预设列表"""
+    return jsonify({"presets": settings.LAYERING_MATERIAL_PRESETS})
+
+@app.route("/api/xhs-style-presets", methods=["GET"])
+def get_xhs_style_presets():
+    """获取小红书风格预设列表"""
+    return jsonify({"presets": settings.XHS_STYLE_PRESETS})
+
+@app.route("/api/xhs-view-presets", methods=["GET"])
+def get_xhs_view_presets():
+    """获取小红书视角预设列表"""
+    return jsonify({"presets": settings.XHS_VIEW_PRESETS})
+
+@app.route("/api/xhs-action-presets", methods=["GET"])
+def get_xhs_action_presets():
+    """获取小红书动作预设列表"""
+    return jsonify({"presets": settings.XHS_ACTION_PRESETS})
 
 
 @app.route("/api/proxy-sites", methods=["GET"])
@@ -930,6 +963,10 @@ def start_process():
     user_prompt = ""
     prompt_truncated = False
     generations_per_source = 1
+    xhs_style = ""
+    xhs_view = ""
+    xhs_action = ""
+    xhs_auto_mode = False
 
     output_name = data.get("output_name", datetime.now().strftime("output_%Y%m%d_%H%M%S"))
     auto_recognize = data.get("auto_recognize", False)
@@ -942,6 +979,16 @@ def start_process():
         # Parse xhs_multi specific parameters
         generations_per_source = min(max(int(data.get("generations_per_source", 1)), 1), 5)
         user_prompt = data.get("user_prompt", "")
+        xhs_style = data.get("xhs_style", "")
+        if xhs_style and xhs_style not in settings.XHS_STYLE_PRESETS:
+            return jsonify({"error": f"不支持的风格: {xhs_style}"}), 400
+        xhs_view = data.get("xhs_view", "")
+        if xhs_view and xhs_view not in settings.XHS_VIEW_PRESETS:
+            return jsonify({"error": f"不支持的视角: {xhs_view}"}), 400
+        xhs_action = data.get("xhs_action", "")
+        if xhs_action and xhs_action not in settings.XHS_ACTION_PRESETS:
+            return jsonify({"error": f"不支持的动作: {xhs_action}"}), 400
+        xhs_auto_mode = bool(data.get("auto_mode", False))
 
         # Truncate user_prompt if needed
         from engine.prompt_builder import PromptBuilder
@@ -983,6 +1030,14 @@ def start_process():
         # Parse underwear_layering specific parameters
         generations_per_source = min(max(int(data.get("generations_per_source", 1)), 1), 5)
         user_prompt = data.get("user_prompt", "")
+        layering_style = data.get("layering_style", "lace_full")
+        if layering_style not in settings.LAYERING_STYLE_PRESETS:
+            return jsonify({"error": f"不支持的叠穿风格: {layering_style}"}), 400
+        material = data.get("material", "lace")
+        if material not in settings.LAYERING_MATERIAL_PRESETS:
+            return jsonify({"error": f"不支持的内衣材质: {material}"}), 400
+        opacity = min(max(int(data.get("opacity", 30)), 0), 100)
+        auto_mode = bool(data.get("auto_mode", False))
 
         from engine.prompt_builder import PromptBuilder
         user_prompt, prompt_truncated = PromptBuilder.truncate_user_prompt(user_prompt)
@@ -1055,11 +1110,19 @@ def start_process():
         task_entry["generations_per_source"] = generations_per_source
         task_entry["user_prompt"] = user_prompt
         task_entry["prompt_truncated"] = prompt_truncated
+        task_entry["xhs_style"] = xhs_style
+        task_entry["xhs_view"] = xhs_view
+        task_entry["xhs_action"] = xhs_action
+        task_entry["auto_mode"] = xhs_auto_mode
 
     # Store underwear_layering specific fields
     if mode == "underwear_layering":
         task_entry["user_prompt"] = user_prompt
         task_entry["prompt_truncated"] = prompt_truncated
+        task_entry["layering_style"] = layering_style
+        task_entry["material"] = material
+        task_entry["opacity"] = opacity
+        task_entry["auto_mode"] = auto_mode
 
     tasks_store[task_id] = task_entry
 
@@ -1073,6 +1136,10 @@ def start_process():
     _xhs_multi_mode = (mode == "xhs_multi")
     _generations_per_source = generations_per_source if mode in ("xhs_multi", "underwear_layering") else 1
     _enable_color_harmonize = enable_color_harmonize if _xhs_multi_mode else True
+    _xhs_style = xhs_style if _xhs_multi_mode else ""
+    _xhs_view = xhs_view if _xhs_multi_mode else ""
+    _xhs_action = xhs_action if _xhs_multi_mode else ""
+    _xhs_auto_mode = xhs_auto_mode if _xhs_multi_mode else False
 
     # Determine user_prompt (shared by xhs_multi and underwear_layering)
     _user_prompt = user_prompt if mode in ("xhs_multi", "underwear_layering") else ""
@@ -1082,11 +1149,24 @@ def start_process():
         _underwear_layering_mode = False
         _underwear_files = None
         _model_files = None
+        _layering_style = "lace_full"
+        _material = "lace"
+        _opacity = 30
+        _auto_mode = False
+    else:
+        _layering_style = layering_style
+        _material = material
+        _opacity = opacity
+        _auto_mode = auto_mode
+
+    # XHS auto mode overrides
+    if _xhs_multi_mode:
+        _auto_mode = _xhs_auto_mode
 
     # Vercel 环境同步处理，否则异步线程
     if os.getenv("VERCEL") == "1" or os.getenv("AWS_EXECUTION_ENV"):
         try:
-            process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files)
+            process_task(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files, _layering_style, _material, _opacity, _auto_mode, _xhs_style, _xhs_view, _xhs_action)
             return jsonify({
                 "task_id": task_id,
                 "status": tasks_store[task_id]["status"],
@@ -1099,7 +1179,7 @@ def start_process():
     else:
         thread = threading.Thread(
             target=process_task,
-            args=(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files),
+            args=(task_id, input_dir, output_dir, prompt, images_per_product, api_keys, auto_recognize, _ref_bg_path, _xhs_multi_mode, _generations_per_source, _user_prompt, _enable_color_harmonize, _underwear_layering_mode, _underwear_files, _model_files, _layering_style, _material, _opacity, _auto_mode, _xhs_style, _xhs_view, _xhs_action),
             daemon=True,
         )
         thread.start()
