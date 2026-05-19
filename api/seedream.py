@@ -30,7 +30,7 @@ class SeedreamAPI:
 
     async def generate_image(
         self, reference_image: Image.Image, prompt: str, n: int = 1,
-        ref_bg_image: Image.Image = None
+        ref_bg_image: Image.Image = None, system_message: str = None
     ) -> list:
         async with self.semaphore:
             last_exception = None
@@ -53,14 +53,14 @@ class SeedreamAPI:
                         bg_base64 = base64.b64encode(bg_buffered.getvalue()).decode()
                         content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{bg_base64}"}})
 
+                    messages = []
+                    if system_message:
+                        messages.append({"role": "system", "content": system_message})
+                    messages.append({"role": "user", "content": content})
+
                     payload = {
                         "model": self.model,
-                        "messages": [
-                            {
-                                "role": "user",
-                                "content": content
-                            }
-                        ]
+                        "messages": messages
                     }
 
                     headers = {

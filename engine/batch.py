@@ -9,6 +9,53 @@ from processor.product_recognizer import ProductRecognizer
 from api.seedream import SeedreamAPI
 
 
+def _build_opacity_section(opacity: int) -> str:
+    """根据透明度百分比生成提示词段落，精确描述面料物理行为"""
+    if opacity <= 5:
+        return """===== 【外衣透明度：完全不透明 0%】 =====
+外衣为厚实不透光面料（如牛仔、厚棉、羊毛、灯芯绒等），完全遮挡内衣。
+- 外衣面料下不可看到任何内衣轮廓、颜色或纹理
+- 内衣仅能从领口、袖口等开口处自然露出边缘
+- 外衣颜色必须保持原图色彩，不受内衣颜色影响"""
+    elif opacity <= 20:
+        return f"""===== 【外衣透明度：微透 {opacity}%】 =====
+外衣为普通厚度面料（如标准棉T恤、针织衫），仅在紧贴皮肤处有极微弱的轮廓暗示。
+- 仅在内衣罩杯最凸起处，外衣面料因贴合而有极轻微的起伏轮廓
+- 不可看到内衣的颜色、花纹或蕾丝纹理
+- 外衣颜色必须100%保持原图，不受内衣颜色任何影响
+- 效果类似于穿着普通T恤时隐约看到的轮廓线"""
+    elif opacity <= 40:
+        return f"""===== 【外衣透明度：隐约透 {opacity}%】 =====
+外衣为略薄面料（如薄棉、轻薄针织、雪纺内衬），内衣轮廓隐约可见但颜色不明。
+- 内衣的整体轮廓和罩杯形状可隐约辨认
+- 内衣的颜色只能以极淡的阴影形式暗示，不可呈现真实颜色
+- 内衣的蕾丝花纹不可见
+- 外衣颜色以原图为主，内衣颜色不得向外衣扩散或渗透"""
+    elif opacity <= 60:
+        return f"""===== 【外衣透明度：半透明 {opacity}%】 =====
+外衣为半透明面料（如薄雪纺、欧根纱、薄纱），内衣的轮廓和颜色朦胧可见。
+- 内衣的轮廓清晰可辨，罩杯形状和肩带走向可见
+- 内衣颜色以柔和、朦胧的方式透出，比实际颜色淡约50%
+- 内衣蕾丝花纹以极模糊的纹理暗示形式可见
+- 外衣自身的颜色和质感为主体，内衣只是底层朦胧影像
+- 严禁内衣颜色向外衣区域扩散或染色"""
+    elif opacity <= 80:
+        return f"""===== 【外衣透明度：高度透明 {opacity}%】 =====
+外衣为透明薄纱/网纱面料，内衣的花纹、颜色、结构清晰可见。
+- 内衣的颜色、花纹、蕾丝细节清晰透过外衣可见
+- 外衣仅保留薄纱质感、光泽和轻微的折射效果
+- 外衣在褶皱处和边缘处透明度略低
+- 内衣颜色应保持原色，但通过外衣纱层观察时带有轻微的纱层色调
+- 外衣纱层与内衣之间有真实的层叠距离感"""
+    else:
+        return f"""===== 【外衣透明度：极度透明 {opacity}%】 =====
+外衣极度透明近乎隐形（如极薄蝉翼纱、透明硬纱），内衣几乎完全展示。
+- 内衣的颜色、纹理、结构完整可见，接近裸眼效果
+- 外衣仅在边缘、褶皱、接缝处有轻微的面料存在感
+- 外衣面料的微弱光泽和轻微折射为画面增添层次感
+- 内衣颜色必须忠实还原，不受外衣色调影响"""
+
+
 class BatchProcessor:
     def __init__(
         self,
@@ -28,6 +75,13 @@ class BatchProcessor:
         generations_per_source: int = 1,
         user_prompt: str = "",
         enable_color_harmonize: bool = True,
+        layering_style: str = "lace_full",
+        material: str = "lace",
+        opacity: int = 30,
+        auto_mode: bool = False,
+        xhs_style: str = "",
+        xhs_view: str = "",
+        xhs_action: str = "",
     ):
         self.background_prompt = background_prompt
         self.api = SeedreamAPI(api_keys=api_keys)
@@ -51,6 +105,14 @@ class BatchProcessor:
         self.generations_per_source = generations_per_source
         self.user_prompt = user_prompt
         self.enable_color_harmonize = enable_color_harmonize
+        self.layering_style = layering_style
+        self.material = material
+        self.opacity = opacity
+        self.auto_mode = auto_mode
+        self.xhs_style = xhs_style
+        self.xhs_view = xhs_view
+        self.xhs_action = xhs_action
+        self._xhs_analysis_cache = {}
         self._semaphore = None
 
     @property
@@ -201,17 +263,35 @@ class BatchProcessor:
                 source_img = ImageProcessor.preprocess_image(pairing.source_path)
                 ref_img = ImageProcessor.preprocess_image(pairing.reference_path)
 
-                # 色彩和谐化：将人物色调向参考背景靠拢
-                if self.enable_color_harmonize and settings.ENABLE_COLOR_HARMONIZE:
-                    source_img = ImageProcessor.harmonize_color(
-                        source_img, ref_img,
-                        strength=settings.COLOR_HARMONIZE_STRENGTH,
+                # 自动模式：AI 分析源图推荐最佳风格+构图（带缓存）
+                if self.auto_mode and self.xhs_multi_mode:
+                    cache_key = pairing.source_path
+                    if cache_key in self._xhs_analysis_cache:
+                        analysis = self._xhs_analysis_cache[cache_key]
+                    else:
+                        from processor.xhs_analyzer import XHSStyleAnalyzer
+                        analyzer = XHSStyleAnalyzer(api_keys=self.api.api_keys if hasattr(self.api, 'api_keys') else None)
+                        analysis = await analyzer.analyze(source_img)
+                        self._xhs_analysis_cache[cache_key] = analysis
+                    style_key = analysis.get("recommended_style", "fresh_natural")
+                    view_key = analysis.get("recommended_view", "front")
+                    action_key = analysis.get("recommended_action", "standing")
+                    self._report_progress(
+                        pairing.source_filename, "processing",
+                        f"AI分析完成: {analysis.get('reasoning', '')}"
                     )
+                else:
+                    style_key = self.xhs_style
+                    view_key = self.xhs_view
+                    action_key = self.xhs_action
 
                 # 构建提示词
                 prompt = PromptBuilder.build_xhs_multi_prompt(
                     user_prompt=self.user_prompt,
                     scene_keywords=[],
+                    style_key=style_key,
+                    view_key=view_key,
+                    action_key=action_key,
                 )
 
                 # 调用 API: Source_Image 作为第一张图, Reference_Image 作为第二张图
@@ -301,14 +381,48 @@ class BatchProcessor:
                 underwear_img = ImageProcessor.preprocess_image(pairing["underwear_path"])
                 model_img = ImageProcessor.preprocess_image(pairing["model_path"])
 
-                # 构建提示词（内衣图作为第一张，模特图作为第二张）
+                # 自动模式：AI 分析并选择最佳配置
+                if self.auto_mode:
+                    from processor.underwear_analyzer import UnderwearAnalyzer
+                    analyzer = UnderwearAnalyzer(api_keys=self.api.api_keys if hasattr(self.api, 'api_keys') else None)
+                    analysis = await analyzer.analyze_pair(underwear_img, model_img)
+                    style_key = analysis.get("recommended_style", "lace_full")
+                    material_key = analysis.get("recommended_material", "lace")
+                    opacity_val = analysis.get("recommended_opacity", 30)
+                    self._report_progress(
+                        pairing["underwear_filename"], "processing",
+                        f"AI分析完成: {analysis.get('reasoning', '')}"
+                    )
+                else:
+                    style_key = self.layering_style
+                    material_key = self.material
+                    opacity_val = self.opacity
+
+                # 构建提示词
+                preset = settings.LAYERING_STYLE_PRESETS.get(style_key, settings.LAYERING_STYLE_PRESETS["lace_full"])
+                style_section = preset["prompt_section"]
+                material_preset = settings.LAYERING_MATERIAL_PRESETS.get(material_key, settings.LAYERING_MATERIAL_PRESETS["lace"])
+                material_section = material_preset["prompt_section"]
+                opacity_section = _build_opacity_section(opacity_val)
                 prompt = settings.UNDERWEAR_LAYERING_PROMPT_TEMPLATE.format(
                     user_prompt=self.user_prompt,
+                    style_section=style_section,
+                    material_section=material_section,
+                    opacity_section=opacity_section,
                 )
 
                 # 调用 API: 内衣图作为 reference_image, 模特图作为 ref_bg_image
+                color_isolation_system = (
+                    "You are a professional fashion photography compositor. "
+                    "CRITICAL RULE: Maintain strict color isolation between layers. "
+                    "The underwear's colors must NEVER bleed, transfer, or contaminate the outer clothing. "
+                    "The outer clothing must retain 100% of its original colors from the model photo. "
+                    "Any color bleeding or contamination is a critical failure. "
+                    "Focus on realistic fabric layering with zero color transfer between garments."
+                )
                 generated_images = await self.api.generate_image(
-                    underwear_img, prompt, ref_bg_image=model_img
+                    underwear_img, prompt, ref_bg_image=model_img,
+                    system_message=color_isolation_system
                 )
 
                 # 保存输出
