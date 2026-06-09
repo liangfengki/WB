@@ -23,19 +23,16 @@ class PromptBuilder:
     """XHS 多图模式提示词构建器"""
 
     @staticmethod
-    def build_xhs_multi_prompt(user_prompt: str = "", scene_keywords: List[str] = None) -> str:
+    def build_xhs_multi_prompt(user_prompt: str = "", scene_keywords: List[str] = None, style_key: str = "", view_key: str = "", action_key: str = "") -> str:
         """
         构建完整的 XHS 多图模式提示词。
-
-        优先级顺序（从高到低）：
-        1. 胸型保持 (Body_Preserver)
-        2. 敏感规避 (Content_Moderator)
-        3. 背景替换 (Background)
-        4. 动作微调 (Pose_Adjuster)
 
         Args:
             user_prompt: 用户自定义补充提示词（最多 500 字符）
             scene_keywords: 场景关键词列表，用于判断室内/室外
+            style_key: 风格预设 key（可选）
+            view_key: 视角预设 key（可选）
+            action_key: 动作预设 key（可选）
 
         Returns:
             完整提示词字符串
@@ -51,12 +48,33 @@ class PromptBuilder:
         else:
             pose_guidance = _POSE_GUIDANCE_NEUTRAL
 
+        # 风格预设
+        if style_key and style_key in settings.XHS_STYLE_PRESETS:
+            style_section = settings.XHS_STYLE_PRESETS[style_key]["prompt_section"]
+        else:
+            style_section = ""
+
+        # 视角预设
+        if view_key and view_key in settings.XHS_VIEW_PRESETS:
+            view_section = settings.XHS_VIEW_PRESETS[view_key]["prompt_section"]
+        else:
+            view_section = ""
+
+        # 动作预设
+        if action_key and action_key in settings.XHS_ACTION_PRESETS:
+            action_section = settings.XHS_ACTION_PRESETS[action_key]["prompt_section"]
+        else:
+            action_section = ""
+
         # 截断用户提示词
         truncated_prompt, _ = PromptBuilder.truncate_user_prompt(user_prompt)
 
         # 填充模板
         prompt = settings.XHS_MULTI_PROMPT_TEMPLATE.format(
             pose_guidance=pose_guidance,
+            style_section=style_section,
+            view_section=view_section,
+            action_section=action_section,
             user_prompt=truncated_prompt,
         )
 

@@ -844,13 +844,28 @@
                                     <option value="5">5张</option>
                                 </select>
                             </div>
-                            <!-- 色彩和谐化开关 -->
-                            <div class="mt-3" style="display:flex;align-items:center;gap:12px">
-                                <label style="font-size:14px;font-weight:600;white-space:nowrap">色彩和谐化</label>
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" id="enableColorHarmonize" checked>
+                            <!-- AI 自动模式 -->
+                            <div class="mt-3 toggle-row">
+                                <div class="toggle-info">
+                                    <div class="toggle-title">AI 自动模式</div>
+                                    <div class="toggle-desc">自动分析人物照片，智能推荐最佳风格和构图</div>
                                 </div>
-                                <span style="font-size:12px;color:var(--text-muted)">自动调整人物色调匹配背景</span>
+                                <div class="toggle" id="xhsAutoModeToggle" onclick="toggleXhsAutoMode()"></div>
+                            </div>
+                            <!-- 手动选择区域 -->
+                            <div id="xhsManualControls">
+                                <div class="mt-3">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px">照片风格</div>
+                                    <div class="scene-grid" id="xhsStyleGrid"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px">拍摄视角</div>
+                                    <div class="scene-grid" id="xhsViewGrid"></div>
+                                </div>
+                                <div class="mt-3">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px">模特动作</div>
+                                    <div class="scene-grid" id="xhsActionGrid"></div>
+                                </div>
                             </div>
                             <!-- 自定义提示词 -->
                             <div class="mt-3">
@@ -871,7 +886,7 @@
                                 <span>内衣叠穿模式</span>
                             </div>
                             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-                                上传内衣图（人台图/模特穿着图/白底图）和模特图（低胸装/U领等），AI将内衣精准叠穿到模特身上，保留所有细节。
+                                上传内衣图（人台图/模特穿着图/白底图）和模特图，选择叠穿风格和透明度，AI将内衣精准叠穿到模特身上。
                             </p>
                             <div class="row g-3">
                                 <!-- 左侧：内衣图上传 -->
@@ -897,10 +912,43 @@
                                     <div class="upload-zone" id="underwearModelZone">
                                         <div class="upload-icon"><i class="bi bi-person-arms-up"></i></div>
                                         <h3>拖拽模特图到此处</h3>
-                                        <p>低胸装/U领等，最多20张</p>
+                                        <p>低胸装/U领/衬衫等，最多20张</p>
                                         <input type="file" id="underwearModelInput" multiple accept=".jpg,.jpeg,.png,.webp">
                                     </div>
                                     <div class="file-list" id="underwearModelList"></div>
+                                </div>
+                            </div>
+                            <!-- AI 自动模式 -->
+                            <div class="mt-3 toggle-row">
+                                <div class="toggle-info">
+                                    <div class="toggle-title">🤖 AI 自动模式</div>
+                                    <div class="toggle-desc">自动识别内衣类型和模特穿搭，智能匹配最佳叠穿效果</div>
+                                </div>
+                                <div class="toggle" id="autoModeToggle" onclick="toggleAutoMode()"></div>
+                            </div>
+                            <!-- 手动选择区域（自动模式下隐藏） -->
+                            <div id="manualLayeringControls">
+                                <!-- 叠穿风格选择 -->
+                                <div class="mt-3">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px">叠穿风格</div>
+                                    <div class="scene-grid" id="layeringGrid"></div>
+                                </div>
+                                <!-- 内衣材质选择 -->
+                                <div class="mt-3">
+                                    <div style="font-size:14px;font-weight:600;margin-bottom:8px">内衣材质</div>
+                                    <div class="scene-grid" id="materialGrid"></div>
+                                </div>
+                                <!-- 外衣透明度滑块 -->
+                                <div class="mt-3">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                                        <span style="font-size:14px;font-weight:600">外衣透明度</span>
+                                        <span id="opacityValue" style="font-size:14px;font-weight:600;color:var(--accent-color)">30%</span>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:10px">
+                                        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">不透明</span>
+                                        <input type="range" id="opacitySlider" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent-color)">
+                                        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">全透</span>
+                                    </div>
                                 </div>
                             </div>
                             <!-- 每组生成数量 -->
@@ -921,6 +969,27 @@
                                     <span id="underwearPromptCounter" style="font-size:12px;color:var(--text-muted);font-weight:400">0/500</span>
                                 </label>
                                 <textarea id="underwearPrompt" class="form-control" rows="2" style="border-radius:12px;font-size:14px;margin-top:6px" placeholder="描述你想要的叠穿效果细节..." maxlength="500" oninput="updateUnderwearPromptCounter()"></textarea>
+                            </div>
+                            <!-- 使用说明 -->
+                            <div class="mt-3">
+                                <div onclick="toggleUsageTips()" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--accent-color);user-select:none">
+                                    <i class="bi bi-info-circle"></i>
+                                    <span>使用建议</span>
+                                    <i class="bi bi-chevron-down" id="usageTipsIcon" style="margin-left:auto;transition:transform 0.2s"></i>
+                                </div>
+                                <div id="usageTips" style="display:none;margin-top:10px;padding:12px;background:var(--bg-secondary);border-radius:10px;font-size:12px;line-height:1.8;color:var(--text-muted)">
+                                    <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px">内衣图要求</div>
+                                    <div>- 推荐：产品平铺图、人台图、白底图、模特穿着图</div>
+                                    <div>- 图片清晰，内衣主体居中，背景简洁</div>
+                                    <div style="font-weight:600;color:var(--text-primary);margin-top:10px;margin-bottom:4px">模特图要求</div>
+                                    <div>- 推荐：领口清晰可见的上半身照</div>
+                                    <div>- 光线充足，姿势自然</div>
+                                    <div style="font-weight:600;color:var(--text-primary);margin-top:10px;margin-bottom:4px">风格搭配建议</div>
+                                    <div>- 大面积展示 + 蕾丝/刺绣 = 经典性感</div>
+                                    <div>- 透视薄纱 + 光面材质 = 高级时装感</div>
+                                    <div>- 微露边缘 + 棉质材质 = 日常自然</div>
+                                    <div>- 半脱半穿 + 刺绣材质 = 私密氛围</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1294,6 +1363,9 @@
     let currentTaskId = null;
     let autoRecognize = false;
     let selectedScene = '';
+    let selectedLayeringStyle = 'lace_full';
+    let selectedMaterial = 'lace';
+    let autoMode = false;
     let pollTimer = null;
     let proxySites = []; // 中转站列表缓存
     let apiConnected = false; // API 连接状态
@@ -1310,6 +1382,10 @@
     let xhsMultiRefFiles = [];
     let xhsMultiInputDir = '';
     let xhsMultiRefDir = '';
+    let selectedXhsStyle = '';
+    let selectedXhsView = '';
+    let selectedXhsAction = '';
+    let xhsAutoMode = false;
     // Underwear layering mode state
     let underwearFiles = [];
     let underwearModelFiles = [];
@@ -1328,6 +1404,14 @@
         setupUpload();
         setupXhsMultiUpload();
         setupUnderwearUpload();
+        // 透明度滑块事件
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityValue = document.getElementById('opacityValue');
+        if (opacitySlider && opacityValue) {
+            opacitySlider.addEventListener('input', () => {
+                opacityValue.textContent = opacitySlider.value + '%';
+            });
+        }
         restoreApiConfig();
         switchMode(currentMode);
         if (licenseKey) {
@@ -1635,6 +1719,127 @@
         selectedScene = desc;
     }
 
+    // 内衣叠穿风格预设
+    async function loadLayeringStyles() {
+        try {
+            const resp = await fetch('/api/layering-presets');
+            const data = await resp.json();
+            const grid = document.getElementById('layeringGrid');
+            grid.innerHTML = Object.entries(data.presets).map(([key, preset]) =>
+                `<div class="scene-chip${key === selectedLayeringStyle ? ' active' : ''}" data-type="${key}" onclick="selectLayeringStyle(this, '${key}')" title="${preset.desc}">${preset.name}</div>`
+            ).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    function selectLayeringStyle(el, type) {
+        document.querySelectorAll('#layeringGrid .scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedLayeringStyle = type;
+    }
+
+    // 内衣材质预设
+    async function loadMaterialPresets() {
+        try {
+            const resp = await fetch('/api/material-presets');
+            const data = await resp.json();
+            const grid = document.getElementById('materialGrid');
+            grid.innerHTML = Object.entries(data.presets).map(([key, preset]) =>
+                `<div class="scene-chip${key === selectedMaterial ? ' active' : ''}" data-type="${key}" onclick="selectMaterial(this, '${key}')" title="${preset.desc}">${preset.name}</div>`
+            ).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    function selectMaterial(el, type) {
+        document.querySelectorAll('#materialGrid .scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedMaterial = type;
+    }
+
+    // 自动模式切换
+    function toggleAutoMode() {
+        autoMode = !autoMode;
+        const toggle = document.getElementById('autoModeToggle');
+        const controls = document.getElementById('manualLayeringControls');
+        if (toggle) toggle.classList.toggle('active', autoMode);
+        if (controls) controls.style.display = autoMode ? 'none' : 'block';
+    }
+
+    // XHS 风格/构图预设
+    async function loadXhsStylePresets() {
+        try {
+            const resp = await fetch('/api/xhs-style-presets');
+            const data = await resp.json();
+            const grid = document.getElementById('xhsStyleGrid');
+            if (!grid) return;
+            grid.innerHTML = Object.entries(data.presets).map(([key, preset]) =>
+                `<div class="scene-chip${key === selectedXhsStyle ? ' active' : ''}" data-type="${key}" onclick="selectXhsStyle(this, '${key}')" title="${preset.desc}">${preset.name}</div>`
+            ).join('');
+        } catch (e) { console.error('加载XHS风格预设失败:', e); }
+    }
+
+    function selectXhsStyle(el, type) {
+        document.querySelectorAll('#xhsStyleGrid .scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedXhsStyle = type;
+    }
+
+    async function loadXhsViewPresets() {
+        try {
+            const resp = await fetch('/api/xhs-view-presets');
+            const data = await resp.json();
+            const grid = document.getElementById('xhsViewGrid');
+            if (!grid) return;
+            grid.innerHTML = Object.entries(data.presets).map(([key, preset]) =>
+                `<div class="scene-chip${key === selectedXhsView ? ' active' : ''}" data-type="${key}" onclick="selectXhsView(this, '${key}')" title="${preset.desc}">${preset.name}</div>`
+            ).join('');
+        } catch (e) { console.error('加载XHS视角预设失败:', e); }
+    }
+
+    function selectXhsView(el, type) {
+        document.querySelectorAll('#xhsViewGrid .scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedXhsView = type;
+    }
+
+    async function loadXhsActionPresets() {
+        try {
+            const resp = await fetch('/api/xhs-action-presets');
+            const data = await resp.json();
+            const grid = document.getElementById('xhsActionGrid');
+            if (!grid) return;
+            grid.innerHTML = Object.entries(data.presets).map(([key, preset]) =>
+                `<div class="scene-chip${key === selectedXhsAction ? ' active' : ''}" data-type="${key}" onclick="selectXhsAction(this, '${key}')" title="${preset.desc}">${preset.name}</div>`
+            ).join('');
+        } catch (e) { console.error('加载XHS动作预设失败:', e); }
+    }
+
+    function selectXhsAction(el, type) {
+        document.querySelectorAll('#xhsActionGrid .scene-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedXhsAction = type;
+    }
+
+    function toggleXhsAutoMode() {
+        xhsAutoMode = !xhsAutoMode;
+        const toggle = document.getElementById('xhsAutoModeToggle');
+        const controls = document.getElementById('xhsManualControls');
+        if (toggle) toggle.classList.toggle('active', xhsAutoMode);
+        if (controls) controls.style.display = xhsAutoMode ? 'none' : 'block';
+    }
+
+    // 使用说明折叠
+    function toggleUsageTips() {
+        const tips = document.getElementById('usageTips');
+        const icon = document.getElementById('usageTipsIcon');
+        if (tips.style.display === 'none') {
+            tips.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            tips.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
     // 为需要 license 校验的图片 URL 追加授权参数（<img> 标签无法带自定义 header）
     function authedUrl(path) {
         if (!licenseKey) return path;
@@ -1676,6 +1881,11 @@
         // 场景设置卡仅 WB 显示
         const sceneCard = document.getElementById('sceneSettingsCard');
         if (sceneCard) sceneCard.style.display = mode === 'wb' ? 'block' : 'none';
+
+        // 服装叠穿模式加载类型预设
+        if (mode === 'underwear_layering') { loadLayeringStyles(); loadMaterialPresets(); }
+        // 小红书模式加载风格/构图预设
+        if (mode === 'xhs_multi') { loadXhsStylePresets(); loadXhsViewPresets(); loadXhsActionPresets(); }
 
         // FAB 中 WB 的 images-per-product 选择器仅 WB 显示
         const fabSelectWrap = document.getElementById('fabSelectWrap');
@@ -1746,10 +1956,11 @@
         const validFiles = validateImageFiles(files, xhsMultiSourceFiles.length, 50, '人物图');
         if (!validFiles.length) return;
 
+        const compressed = await compressFiles(validFiles);
         const formData = new FormData();
         formData.append('session_id', sessionId || '');
         formData.append('scope', 'xhs_source');
-        for (const f of validFiles) formData.append('files', f);
+        for (const f of compressed) formData.append('files', f);
 
         try {
             const reqHeaders = {};
@@ -1786,9 +1997,10 @@
         const validFiles = validateImageFiles(files, xhsMultiRefFiles.length, 20, '参考背景图');
         if (!validFiles.length) return;
 
+        const compressed = await compressFiles(validFiles);
         const formData = new FormData();
         formData.append('session_id', sessionId || '');
-        for (const f of validFiles) formData.append('files', f);
+        for (const f of compressed) formData.append('files', f);
 
         try {
             const reqHeaders = {};
@@ -1950,8 +2162,9 @@
         const validFiles = validateImageFiles(files, existingFiles.length, maxCount, scope === 'underwear' ? '内衣图' : '模特图');
         if (!validFiles.length) return;
 
+        const compressed = await compressFiles(validFiles);
         const formData = new FormData();
-        validFiles.forEach(f => formData.append('files', f));
+        compressed.forEach(f => formData.append('files', f));
         formData.append('session_id', sessionId || '');
         formData.append('scope', scope);
 
@@ -2081,6 +2294,22 @@
         localStorage.setItem(TASK_CACHE_KEY, JSON.stringify(taskHistoryCache));
     }
 
+    function clearStaleTask(taskId) {
+        // 先检查服务端任务是否存在，避免网络临时故障误删
+        fetch(`/api/task/${taskId}`, {
+            headers: { 'X-License-Key': licenseKey }
+        }).then(resp => {
+            if (resp.status === 404) {
+                // 服务端确认任务不存在，清除本地缓存
+                if (taskHistoryCache[taskId]) {
+                    delete taskHistoryCache[taskId];
+                    localStorage.setItem(TASK_CACHE_KEY, JSON.stringify(taskHistoryCache));
+                    renderAllCachedHistory();
+                }
+            }
+        }).catch(() => {});
+    }
+
     function restoreCachedState() {
         // 恢复上传文件列表 —— 通过服务端API获取该session的已上传文件
         if (sessionId) {
@@ -2198,7 +2427,7 @@
                         return `
                         <div class="result-item" style="cursor:pointer" onclick="openLightbox(__allLbImgs, ${lbIdx})">
                             <img src="${imgUrl}" alt="${escapeHtml(f)}" loading="lazy"
-                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'padding:20px;color:var(--text-light);font-size:12px\\'>图片已过期</div>'">
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'padding:20px;color:var(--text-light);font-size:12px\\'>图片已失效</div>';clearStaleTask('${tid}')">
                             <div class="result-actions">
                                 <button class="btn-icon" style="width:26px;height:26px;font-size:11px;background:rgba(255,255,255,.9)" onclick="event.stopPropagation();downloadOne('${tid}','${safeName}')"><i class="bi bi-download"></i></button>
                                 <button class="btn-icon" style="width:26px;height:26px;font-size:11px;background:rgba(255,255,255,.9)" onclick="event.stopPropagation();deleteOne('${tid}','${safeName}')"><i class="bi bi-trash"></i></button>
@@ -2229,10 +2458,11 @@
     async function handleFiles(files) {
         if (!files.length) return;
 
+        const compressed = await compressFiles(files);
         const formData = new FormData();
         const sessionIdField = sessionId || '';
         formData.append('session_id', sessionIdField);
-        for (const f of files) formData.append('files', f);
+        for (const f of compressed) formData.append('files', f);
 
         try {
             const reqHeaders = {};
@@ -2379,7 +2609,10 @@
                 ref_bg_dir: xhsMultiRefDir,
                 generations_per_source: generationsPerSource,
                 user_prompt: userPrompt,
-                enable_color_harmonize: document.getElementById('enableColorHarmonize').checked,
+                xhs_style: selectedXhsStyle || '',
+                xhs_view: selectedXhsView || '',
+                xhs_action: selectedXhsAction || '',
+                auto_mode: xhsAutoMode,
                 api_key: apiKey,
                 base_url: baseUrl,
                 model: model,
@@ -2394,6 +2627,10 @@
                 model_dir: underwearModelDir,
                 generations_per_source: uwGenCount,
                 user_prompt: userPrompt,
+                layering_style: selectedLayeringStyle || 'lace_full',
+                material: selectedMaterial || 'lace',
+                opacity: parseInt(document.getElementById('opacitySlider').value, 10) || 30,
+                auto_mode: autoMode,
                 api_key: apiKey,
                 base_url: baseUrl,
                 model: model,
@@ -2714,6 +2951,47 @@
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    // ====== 前端图片压缩 ======
+    async function compressImage(file, maxSize = 2048, quality = 0.80) {
+        // 小于 500KB 跳过压缩
+        if (file.size < 500 * 1024) return file;
+        // 非图片文件跳过
+        if (!file.type.startsWith('image/')) return file;
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (Math.max(w, h) > maxSize) {
+                    const ratio = maxSize / Math.max(w, h);
+                    w = Math.round(w * ratio);
+                    h = Math.round(h * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob((blob) => {
+                    if (!blob) { resolve(file); return; }
+                    const newName = file.name.replace(/\.[^.]+$/, '.jpg');
+                    resolve(new File([blob], newName, { type: 'image/jpeg' }));
+                    URL.revokeObjectURL(img.src);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => { resolve(file); URL.revokeObjectURL(img.src); };
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    async function compressFiles(files) {
+        const arr = Array.from(files);
+        const results = [];
+        for (const f of arr) {
+            results.push(await compressImage(f));
+        }
+        return results;
     }
 
     // ====== 灯箱大图预览 ======
